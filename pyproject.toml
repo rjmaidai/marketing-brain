@@ -1,0 +1,21 @@
+[project]
+name = "marketing-brain"
+version = "0.1.0"
+description = "Reference-First / Closed-Loop-Engine für das fünfteilige Marketing-Hirn (Social Media, Marketing, Storytelling, Krise, Influencer)."
+requires-python = ">=3.10"
+dependencies = [
+  "anthropic>=0.39.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.scripts]
+brain = "marketing_brain.cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
