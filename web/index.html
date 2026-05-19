@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Marketing-Hirn</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f4f1ea;
+      --bg-card: #ffffff;
+      --bg-soft: #ece6da;
+      --ink: #1a1a1a;
+      --ink-soft: #5c5853;
+      --ink-faint: #94908a;
+      --accent: #b8491c;       /* terracotta */
+      --accent-soft: #f0d4c2;
+      --rule: #d8d0bf;
+      --skeptic: #6b4f7a;
+      --gate: #355a3a;
+      --shadow: 0 1px 0 rgba(26,26,26,0.04), 0 8px 24px -8px rgba(26,26,26,0.12);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Inter', -apple-system, system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.55;
+      min-height: 100vh;
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 48px 32px 96px; }
+    header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 32px; }
+    .brand { font-family: 'Fraunces', Georgia, serif; font-weight: 500; font-size: 28px; letter-spacing: -0.01em; }
+    .brand i { font-style: italic; color: var(--accent); font-weight: 400; }
+    .brand small { font-family: 'Inter', sans-serif; font-size: 13px; color: var(--ink-faint); margin-left: 12px; font-weight: 400; letter-spacing: 0; }
+    .status { font-size: 12px; color: var(--ink-faint); display: flex; gap: 16px; align-items: center; }
+    .pill { background: var(--bg-card); border: 1px solid var(--rule); padding: 4px 10px; border-radius: 999px; font-weight: 500; }
+    .pill.live { background: var(--gate); color: white; border-color: var(--gate); }
+    .pill.mock { background: var(--bg-card); color: var(--ink-soft); }
+
+    .hero { margin-bottom: 32px; }
+    .hero h1 { font-family: 'Fraunces', Georgia, serif; font-weight: 400; font-size: 44px; line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 12px; max-width: 720px; }
+    .hero h1 i { font-style: italic; color: var(--accent); }
+    .hero p { color: var(--ink-soft); margin: 0; max-width: 680px; }
+
+    .composer { background: var(--bg-card); border: 1px solid var(--rule); border-radius: 14px; padding: 4px; box-shadow: var(--shadow); margin-bottom: 24px; }
+    .composer textarea {
+      width: 100%; border: none; outline: none; resize: vertical;
+      font-family: inherit; font-size: 16px; line-height: 1.5; padding: 20px 20px 8px;
+      min-height: 90px; background: transparent; color: var(--ink);
+    }
+    .composer-bar { display: flex; align-items: center; gap: 12px; padding: 8px 16px 12px; }
+    .composer-bar small { color: var(--ink-faint); font-size: 12px; flex: 1; }
+    button.ask {
+      background: var(--ink); color: var(--bg); border: none; padding: 10px 22px;
+      border-radius: 999px; font-weight: 500; font-size: 14px; cursor: pointer;
+      font-family: inherit; transition: background 0.15s;
+    }
+    button.ask:hover { background: var(--accent); }
+    button.ask:disabled { background: var(--ink-faint); cursor: wait; }
+    .force-mock { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-faint); cursor: pointer; user-select: none; }
+    .force-mock input { accent-color: var(--accent); }
+
+    .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 32px; }
+    .ex {
+      background: transparent; border: 1px solid var(--rule); border-radius: 999px;
+      padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--ink-soft);
+      font-family: inherit; transition: all 0.15s;
+    }
+    .ex:hover { background: var(--bg-card); border-color: var(--ink); color: var(--ink); }
+
+    /* Results layout */
+    .results { display: grid; grid-template-columns: 1.6fr 1fr; gap: 24px; margin-top: 8px; }
+    @media (max-width: 900px) { .results { grid-template-columns: 1fr; } }
+    .panel { background: var(--bg-card); border: 1px solid var(--rule); border-radius: 14px; padding: 24px; box-shadow: var(--shadow); }
+    .panel h2 { font-family: 'Fraunces', Georgia, serif; font-weight: 500; font-size: 18px; margin: 0 0 16px; letter-spacing: -0.01em; }
+    .panel h2 i { font-style: italic; color: var(--accent); }
+    .answer { white-space: pre-wrap; font-family: 'Inter', sans-serif; line-height: 1.7; color: var(--ink); }
+    .answer .ref { background: var(--accent-soft); color: var(--accent); padding: 1px 6px; border-radius: 4px; font-size: 13px; font-weight: 500; cursor: pointer; }
+    .answer .ref:hover { background: var(--accent); color: white; }
+
+    .side > * + * { margin-top: 20px; }
+    .mode-badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    .mode-badge.crisis    { background: #f7d4d4; color: #8a2c2c; }
+    .mode-badge.marketing_kette { background: var(--accent-soft); color: var(--accent); }
+    .mode-badge.strategie { background: #e0dccf; color: #5c4f2c; }
+    .mode-badge.storytelling { background: #d6c3df; color: #4a2c5a; }
+    .mode-badge.influencer { background: #c9d8c5; color: #2c4a2c; }
+    .mode-badge.audience, .mode-badge.distribution, .mode-badge.conversion, .mode-badge.retention, .mode-badge.social_media, .mode-badge.meta { background: var(--bg-soft); color: var(--ink-soft); }
+
+    .lobe-card { display: flex; gap: 12px; padding: 10px 0; border-top: 1px solid var(--rule); }
+    .lobe-card:first-of-type { border-top: none; }
+    .lobe-card .addr { font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace; font-size: 12px; background: var(--bg-soft); padding: 2px 6px; border-radius: 4px; color: var(--ink-soft); white-space: nowrap; height: fit-content; cursor: pointer; }
+    .lobe-card .addr:hover { background: var(--accent-soft); color: var(--accent); }
+    .lobe-card .who { flex: 1; min-width: 0; }
+    .lobe-card .name { font-weight: 600; font-size: 13px; }
+    .lobe-card .dna { color: var(--ink-soft); font-size: 12px; margin-top: 2px; line-height: 1.4; }
+    .lobe-card.skeptic .addr { background: var(--skeptic); color: white; }
+    .lobe-card.skeptic .name::after { content: " · Skeptiker"; color: var(--skeptic); font-weight: 500; font-size: 11px; }
+
+    .gate { padding: 10px 12px; background: var(--bg-soft); border-left: 3px solid var(--gate); border-radius: 4px; font-size: 13px; color: var(--ink-soft); margin-top: 8px; }
+    .axis { padding: 8px 12px; background: #f9efe8; border-left: 3px solid var(--accent); border-radius: 4px; font-size: 13px; color: var(--ink-soft); margin-top: 6px; }
+    .axis b { color: var(--ink); font-weight: 600; }
+    .rhyme { font-size: 12px; color: var(--ink-soft); padding: 4px 0; }
+    .rhyme code { font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace; background: var(--bg-soft); padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+
+    .empty { color: var(--ink-faint); font-style: italic; font-size: 13px; }
+
+    .browse { margin-top: 64px; }
+    .browse h2 { font-family: 'Fraunces', Georgia, serif; font-weight: 500; font-size: 22px; margin: 0 0 4px; }
+    .browse > p { color: var(--ink-soft); margin: 0 0 24px; font-size: 14px; }
+    .seg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .seg-card { background: var(--bg-card); border: 1px solid var(--rule); border-radius: 12px; padding: 16px; }
+    .seg-card h3 { margin: 0 0 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-faint); font-weight: 600; }
+    .seg-card .lobe-mini { padding: 6px 0; cursor: pointer; font-size: 13px; display: flex; gap: 10px; align-items: baseline; }
+    .seg-card .lobe-mini:hover .lobe-name { color: var(--accent); }
+    .seg-card code { font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace; font-size: 11px; color: var(--ink-faint); }
+
+    .loader { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--rule); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Lobe-Modal */
+    .modal-bg { position: fixed; inset: 0; background: rgba(26,26,26,0.5); display: none; align-items: flex-start; justify-content: center; z-index: 100; padding: 48px 16px; overflow-y: auto; }
+    .modal-bg.open { display: flex; }
+    .modal { background: var(--bg-card); border-radius: 14px; max-width: 820px; width: 100%; padding: 32px; box-shadow: 0 24px 64px -16px rgba(0,0,0,0.3); }
+    .modal-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; gap: 16px; }
+    .modal-head h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 24px; margin: 0; }
+    .modal-head button { background: none; border: 1px solid var(--rule); border-radius: 6px; padding: 4px 10px; cursor: pointer; font-family: inherit; color: var(--ink-soft); }
+    .modal .meta { color: var(--ink-soft); font-size: 13px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--rule); }
+    .modal .meta b { color: var(--ink); }
+    .modal .dna { font-style: italic; color: var(--ink); padding: 12px 16px; background: var(--bg-soft); border-radius: 6px; margin: 16px 0; font-family: 'Fraunces', serif; font-size: 16px; line-height: 1.5; }
+    .modal .section { margin-top: 20px; }
+    .modal .section h3 { margin: 0 0 6px; font-size: 14px; font-family: 'Inter', sans-serif; font-weight: 600; color: var(--accent); }
+    .modal .section .body { white-space: pre-wrap; line-height: 1.65; color: var(--ink); font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        Marketing-<i>Hirn</i>
+        <small>45 Köpfe · 5 Sub-Hirne · Reference-First</small>
+      </div>
+      <div class="status">
+        <span id="status-lobes">… lade Lobes</span>
+        <span id="status-mode" class="pill mock">Mock</span>
+      </div>
+    </header>
+
+    <section class="hero">
+      <h1>Frag das <i>Hirn</i>.</h1>
+      <p>Es zieht Köpfe nicht nach Ähnlichkeit, sondern nach Sequenz-Gates und Pflicht-Skeptikern — und referenziert jede Aussage mit <code>{Segment}:{Lobe}.{Sektion}</code>.</p>
+    </section>
+
+    <div class="composer">
+      <textarea id="q" placeholder="Was beschäftigt dich? Z. B.: Pressevorwurf, dpa fragt an. — oder: Wie launchen wir unsere neue B2B-Marke? — oder: TikTok-Creator-Deal, was ist das eigentliche Asset?"></textarea>
+      <div class="composer-bar">
+        <small id="hint">Cmd/Ctrl + Enter zum Senden</small>
+        <label class="force-mock"><input type="checkbox" id="force-mock"> Mock erzwingen</label>
+        <button class="ask" id="ask">Frag das Hirn</button>
+      </div>
+    </div>
+
+    <div class="examples" id="examples">
+      <button class="ex" data-q="Pressevorwurf wegen Datenleck, Stunde 2, dpa fragt an. Was tun?">Krise · Datenleck</button>
+      <button class="ex" data-q="Wir wollen eine neue B2B-SaaS-Marke launchen — von Strategie bis Retention.">Marketing-Launch</button>
+      <button class="ex" data-q="Wie strukturiere ich unsere Markenstory? Heldenreise — ja oder nein?">Storytelling</button>
+      <button class="ex" data-q="Wir wollen mit einem TikTok-Creator arbeiten — was ist das eigentliche Asset?">Creator-Deal</button>
+      <button class="ex" data-q="Welche Growth-Loops sollen wir bauen, um schneller zu skalieren?">Growth-Loops</button>
+    </div>
+
+    <div id="results" style="display:none;">
+      <div class="results">
+        <div class="panel">
+          <h2>Antwort <span id="mode-tag"></span></h2>
+          <div class="answer" id="answer"></div>
+          <div id="usage" style="margin-top:16px; font-size:12px; color:var(--ink-faint);"></div>
+        </div>
+        <aside class="panel side">
+          <div>
+            <h2>Routing</h2>
+            <div id="routing"></div>
+          </div>
+          <div id="block-lobes">
+            <h2>Aktive <i>Köpfe</i></h2>
+            <div id="lobes"></div>
+          </div>
+          <div id="block-gates" style="display:none;">
+            <h2>Sequenz-<i>Gates</i></h2>
+            <div id="gates"></div>
+          </div>
+          <div id="block-axes" style="display:none;">
+            <h2>Offene <i>Achsen</i></h2>
+            <div id="axes"></div>
+          </div>
+          <div id="block-rhymes" style="display:none;">
+            <h2>Reim-<i>Brücken</i></h2>
+            <div id="rhymes"></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <section class="browse">
+      <h2>Alle 45 <i>Köpfe</i></h2>
+      <p>Klick einen Kopf an, um seine Karte zu öffnen — DNA, Achse, alle Sektionen.</p>
+      <div class="seg-grid" id="seg-grid"></div>
+    </section>
+  </div>
+
+  <div class="modal-bg" id="modal-bg">
+    <div class="modal" id="modal">
+      <div class="modal-head">
+        <h2 id="modal-title">…</h2>
+        <button id="modal-close">Schliessen</button>
+      </div>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+    const escape = (s) => s.replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+
+    // ---- Status auf Start ----
+    fetch('/api/status').then(r => r.json()).then(s => {
+      $('#status-lobes').textContent = `${s.lobes_loaded} Köpfe geladen`;
+      const m = $('#status-mode');
+      if (s.has_api_key) { m.textContent = `Live · ${s.model}`; m.className = 'pill live'; }
+      else { m.textContent = 'Mock-Modus (kein API-Key)'; m.className = 'pill mock'; }
+    });
+
+    // ---- Lobe-Browser unten ----
+    fetch('/api/lobes').then(r => r.json()).then(d => {
+      const grid = $('#seg-grid');
+      grid.innerHTML = '';
+      for (const [seg, lobes] of Object.entries(d.by_segment)) {
+        if (!lobes.length) continue;
+        const card = document.createElement('div');
+        card.className = 'seg-card';
+        card.innerHTML = `<h3>${seg}</h3>` + lobes.map(l =>
+          `<div class="lobe-mini" data-addr="${l.address}">
+             <code>${escape(l.id)}</code>
+             <span class="lobe-name">${escape(l.author)}</span>
+           </div>`
+        ).join('');
+        grid.appendChild(card);
+      }
+      grid.querySelectorAll('.lobe-mini').forEach(el => {
+        el.addEventListener('click', () => openLobe(el.dataset.addr));
+      });
+    });
+
+    // ---- Lobe-Modal ----
+    async function openLobe(address) {
+      const r = await fetch('/api/lobe/' + encodeURIComponent(address));
+      if (!r.ok) return;
+      const l = await r.json();
+      $('#modal-title').innerHTML = `${escape(l.address)} <small style="color:var(--ink-faint); font-size:14px; font-weight:400;">${escape(l.author)}</small>`;
+      let html = `<div class="meta">`;
+      if (l.axis) html += `<div><b>Achse:</b> ${escape(l.axis)}</div>`;
+      if (l.function) html += `<div><b>Funktion:</b> ${escape(l.function)}</div>`;
+      html += `</div>`;
+      if (l.dna) html += `<div class="dna">${escape(l.dna)}</div>`;
+      if (l.pitch) html += `<div class="section"><h3>Pitch-Einzeiler (.11)</h3><div class="body">„${escape(l.pitch)}"</div></div>`;
+      if (l.gehirn_regel) html += `<div class="section"><h3>Gehirn-Regel (.8)</h3><div class="body">${escape(l.gehirn_regel)}</div></div>`;
+      for (const s of l.sections) {
+        html += `<div class="section"><h3>${escape(l.address)}.${escape(s.number)} — ${escape(s.title)}</h3><div class="body">${escape(s.body)}</div></div>`;
+      }
+      $('#modal-content').innerHTML = html;
+      $('#modal-bg').classList.add('open');
+      $('#modal-bg').scrollTop = 0;
+    }
+    $('#modal-close').addEventListener('click', () => $('#modal-bg').classList.remove('open'));
+    $('#modal-bg').addEventListener('click', (e) => { if (e.target.id === 'modal-bg') $('#modal-bg').classList.remove('open'); });
+
+    // ---- Ask ----
+    const askBtn = $('#ask');
+    const qInput = $('#q');
+
+    qInput.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); ask(); }
+    });
+    askBtn.addEventListener('click', ask);
+
+    document.querySelectorAll('.ex').forEach(b => {
+      b.addEventListener('click', () => { qInput.value = b.dataset.q; ask(); });
+    });
+
+    function refToHtml(text) {
+      // Wandelt [Segment:Lobe.Section] und {Segment:Lobe.Section} in klickbare Spans
+      return text.replace(/\[([A-Za-z]+:[A-Za-z0-9]+(?:\.[0-9]+(?:\.[0-9]+)?)?)\]/g,
+        (_, ref) => `<span class="ref" data-ref="${ref}">${ref}</span>`);
+    }
+
+    async function ask() {
+      const query = qInput.value.trim();
+      if (!query) return;
+      askBtn.disabled = true; askBtn.innerHTML = '<span class="loader"></span>';
+      $('#results').style.display = 'block';
+      $('#answer').innerHTML = '<span class="empty">Hirn denkt …</span>';
+      $('#routing').innerHTML = ''; $('#lobes').innerHTML = '';
+      $('#mode-tag').innerHTML = '';
+      try {
+        const r = await fetch('/api/ask', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({query, force_mock: $('#force-mock').checked}),
+        });
+        const data = await r.json();
+        render(data);
+      } catch (e) {
+        $('#answer').textContent = 'Fehler: ' + e.message;
+      } finally {
+        askBtn.disabled = false; askBtn.innerHTML = 'Frag das Hirn';
+      }
+    }
+
+    function render(d) {
+      // Antwort
+      const modeLabel = d.mode_used === 'live' ? 'Live' : 'Mock';
+      $('#mode-tag').innerHTML = `<span class="mode-badge ${escape(d.routing.mode)}">${escape(d.routing.mode.replace(/_/g, ' '))}</span> <span class="mode-badge" style="background:var(--bg-soft); color:var(--ink-soft); margin-left:4px;">${modeLabel}</span>`;
+      $('#answer').innerHTML = refToHtml(escape(d.answer));
+      // Click-Through auf References
+      $('#answer').querySelectorAll('.ref').forEach(el => {
+        el.addEventListener('click', () => openLobe(el.dataset.ref.split('.')[0]));
+      });
+      // Usage
+      const u = d.usage || {};
+      if (u.input_tokens) {
+        const cache = u.cache_read_input_tokens || 0;
+        const created = u.cache_creation_input_tokens || 0;
+        $('#usage').textContent = `Tokens — Input: ${u.input_tokens}, Output: ${u.output_tokens}, Cache-Read: ${cache}, Cache-Created: ${created}`;
+      } else { $('#usage').textContent = ''; }
+
+      const r = d.routing;
+      $('#routing').innerHTML =
+        `<div style="font-size:13px; color:var(--ink-soft);">
+          Klassifiziert als <b style="color:var(--ink)">${escape(r.mode.replace(/_/g, ' '))}</b><br>
+          ${r.primary_lobes.length} Lobes aktiv${r.skeptic ? ` · Skeptiker <code style="background:var(--bg-soft); padding:1px 5px; border-radius:3px; font-family:monospace; font-size:11px;">${escape(r.skeptic)}</code>` : ''}
+        </div>`;
+
+      // Lobes
+      const lobesEl = $('#lobes');
+      lobesEl.innerHTML = '';
+      const lobeData = {};
+      Promise.all(r.primary_lobes.concat(r.skeptic ? [r.skeptic] : []).map(addr =>
+        fetch('/api/lobe/' + encodeURIComponent(addr)).then(x => x.ok ? x.json() : null).then(j => { if (j) lobeData[addr] = j; })
+      )).then(() => {
+        r.primary_lobes.forEach(addr => {
+          const l = lobeData[addr] || {};
+          lobesEl.appendChild(makeLobeCard(addr, l, false));
+        });
+        if (r.skeptic) lobesEl.appendChild(makeLobeCard(r.skeptic, lobeData[r.skeptic] || {}, true));
+      });
+
+      // Gates
+      const gatesEl = $('#gates');
+      gatesEl.innerHTML = '';
+      if (r.sequence_notes && r.sequence_notes.length) {
+        r.sequence_notes.forEach(g => {
+          const el = document.createElement('div'); el.className = 'gate'; el.textContent = g; gatesEl.appendChild(el);
+        });
+        $('#block-gates').style.display = '';
+      } else { $('#block-gates').style.display = 'none'; }
+
+      // Axes
+      const axesEl = $('#axes');
+      axesEl.innerHTML = '';
+      if (r.open_axes && r.open_axes.length) {
+        r.open_axes.forEach(([a, b, desc]) => {
+          const el = document.createElement('div'); el.className = 'axis';
+          el.innerHTML = `<b>${escape(a)} ↔ ${escape(b)}</b><br>${escape(desc)}`;
+          axesEl.appendChild(el);
+        });
+        $('#block-axes').style.display = '';
+      } else { $('#block-axes').style.display = 'none'; }
+
+      // Rhymes
+      const rhEl = $('#rhymes');
+      rhEl.innerHTML = '';
+      if (r.rhyme_partners && r.rhyme_partners.length) {
+        r.rhyme_partners.forEach(([a, b, axis]) => {
+          const el = document.createElement('div'); el.className = 'rhyme';
+          el.innerHTML = `<code>${escape(a)}</code> reimt auf <code>${escape(b)}</code> · <span style="color:var(--accent)">${escape(axis)}</span>`;
+          rhEl.appendChild(el);
+        });
+        $('#block-rhymes').style.display = '';
+      } else { $('#block-rhymes').style.display = 'none'; }
+    }
+
+    function makeLobeCard(addr, l, isSkeptic) {
+      const el = document.createElement('div');
+      el.className = 'lobe-card' + (isSkeptic ? ' skeptic' : '');
+      el.innerHTML = `
+        <div class="addr" data-addr="${escape(addr)}">${escape(addr)}</div>
+        <div class="who">
+          <div class="name">${escape(l.author || '')}</div>
+          <div class="dna">${escape(l.dna || '')}</div>
+        </div>`;
+      el.querySelector('.addr').addEventListener('click', () => openLobe(addr));
+      return el;
+    }
+  </script>
+</body>
+</html>

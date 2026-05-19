@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import textwrap
 from pathlib import Path
@@ -204,6 +205,27 @@ def cmd_rhymes(args) -> int:
     return 0
 
 
+def cmd_serve(args) -> int:
+    try:
+        import uvicorn
+    except ImportError:
+        print("Bitte zuerst FastAPI installieren: pip install fastapi uvicorn", file=sys.stderr)
+        return 2
+    # Import erst hier — damit `brain list/show/...` ohne FastAPI laufen.
+    print(f"╭── Marketing-Hirn Dashboard")
+    print(f"│  http://{args.host}:{args.port}")
+    print(f"│  API-Key gesetzt: {'JA (Live)' if os.environ.get('ANTHROPIC_API_KEY') else 'nein (Mock-Modus)'}")
+    print(f"╰──")
+    uvicorn.run(
+        "marketing_brain.server:app",
+        host=args.host,
+        port=args.port,
+        reload=args.reload,
+        log_level="info",
+    )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="brain",
@@ -246,6 +268,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_rh.add_argument("--address", help="Optional: Reim-Partner eines bestimmten Lobes.")
     _add_data_root(p_rh)
     p_rh.set_defaults(func=cmd_rhymes)
+
+    p_srv = sub.add_parser("serve", help="Starte das Web-Dashboard (FastAPI).")
+    p_srv.add_argument("--host", default="0.0.0.0")
+    p_srv.add_argument("--port", type=int, default=8000)
+    p_srv.add_argument("--reload", action="store_true", help="Auto-Reload bei Code-Änderung.")
+    p_srv.set_defaults(func=cmd_serve)
 
     return p
 
