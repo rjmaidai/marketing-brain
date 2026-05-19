@@ -5,6 +5,9 @@ description = "Reference-First / Closed-Loop-Engine für das fünfteilige Market
 requires-python = ">=3.10"
 dependencies = [
   "anthropic>=0.39.0",
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.27",
+  "pydantic>=2",
 ]
 
 [project.optional-dependencies]
