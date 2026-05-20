@@ -60,7 +60,7 @@ export function InputForm({
             disabled={isLoading || idea.trim().length < 8}
             className="rounded-md bg-gold px-4 py-2 text-sm font-medium uppercase tracking-wider text-bg transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isLoading ? "Köpfe denken …" : "Lass die Köpfe sprechen"}
+            {isLoading ? "Köpfe denken …" : "Lass die Köpfe schreiben"}
           </button>
         </div>
       </div>

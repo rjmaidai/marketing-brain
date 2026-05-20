@@ -8,15 +8,15 @@ const HEAD_DIRECTORY = HEADS.map(
 
 export const SELECTION_SYSTEM_PROMPT = `Du bist der Selektor des Marketing-Hirns.
 
-Du erhältst eine Nutzer-Idee und musst entscheiden, welche 3–5 Köpfe darüber diskutieren sollen. Du antwortest AUSSCHLIESSLICH mit einem JSON-Objekt.
+Du erhältst eine Nutzer-Idee und musst die Köpfe wählen, die darüber diskutieren. Du antwortest AUSSCHLIESSLICH mit einem JSON-Objekt.
 
 NICHT-ABSCHALTBARE REGELN bei der Auswahl:
-1. Sequenz-Gate: Wenn eine vorgelagerte Schicht fehlt (z.B. Conversion-Frage ohne Audience-Klarheit, Distribution-Frage ohne PMF), MUSS mindestens ein Kopf aus der vorgelagerten Schicht in der Auswahl sein.
-2. Ritson-Gate (03): Wenn die Idee taktisch formuliert ist, ohne dass eine Strategie/Zielgruppe geklärt ist, MUSS 03 (Ritson) dabei sein.
-3. PMF-Gate: Wenn nach Marketing/Distribution gefragt wird, ohne dass PMF erwähnt oder belegt ist, MUSS D4 (Sean Ellis) dabei sein.
-4. Skeptiker-Korrektiv: Mindestens ein Skeptiker-/Korrektiv-Kopf passend zum Thema (z.B. 05 Sutherland, K5 Dezenhall, I5 Webster, S5 Porter).
-5. Keine Dopplung: Köpfe aus verschiedenen Segmenten bevorzugen, damit echte Reibung entsteht.
-6. Mindestens 3, maximal 5 Köpfe.
+1. Vollständige Abdeckung: AUS JEDEM der 9 Segmente (Strategie, Audience, Distribution, Conversion, Retention, Social Media, Storytelling, Krise, Influencer) MUSS mindestens EIN Kopf in der Auswahl sein. Mindestens 9 Köpfe, maximal 12.
+2. Sequenz-Gate: Wenn eine vorgelagerte Schicht für die Idee zentral ist (z.B. Conversion-Frage ohne Audience-Klarheit, Distribution-Frage ohne PMF), wähle in diesem Segment den Kopf, der das Defizit am schärfsten benennt.
+3. Ritson-Gate (03): Wenn die Idee taktisch formuliert ist, ohne dass eine Strategie/Zielgruppe geklärt ist, MUSS 03 (Ritson) der Strategie-Vertreter sein.
+4. PMF-Gate: Wenn nach Marketing/Distribution gefragt wird, ohne dass PMF erwähnt oder belegt ist, MUSS D4 (Sean Ellis) der Distribution-Vertreter sein.
+5. Skeptiker bevorzugen, wo Reibung nötig ist: In einem Segment mit mehreren passenden Köpfen wähle den Skeptiker-/Korrektiv-Kopf, wenn die Idee unkritisch wirkt (z.B. 05 Sutherland für Strategie, K5 Dezenhall für Krise, I5 Webster für Influencer, S5 Porter für Storytelling).
+6. Ein Kopf pro Segment ist die Regel. Nur in Ausnahmefällen (z.B. wenn ein zweiter Kopf eine zentrale Gegenposition liefert) darf ein Segment doppelt belegt werden — maximal in zwei Segmenten.
 
 VERFÜGBARE KÖPFE (id → segment → name → pitch):
 ${HEAD_DIRECTORY}
@@ -37,7 +37,7 @@ ANTWORT-FORMAT (strikt, kein Prosa-Text drumherum):
 Wenn das Ritson-Gate NICHT greift, setze "triggered": false und lass "missing_layer" und "note" weg.`;
 
 export function buildSelectionUserMessage(idea: string): string {
-  return `NUTZER-IDEE:\n${idea.trim()}\n\nWähle 3–5 Köpfe nach den Regeln. Antworte ausschließlich als JSON.`;
+  return `NUTZER-IDEE:\n${idea.trim()}\n\nWähle 9–12 Köpfe nach den Regeln — pro Segment mindestens einer. Antworte ausschließlich als JSON.`;
 }
 
 export function buildDiscussionSystemPrompt(selectedIds: string[]): string {
@@ -99,4 +99,11 @@ export function buildDiscussionUserMessage(
     ? `\n\nHINWEIS ZUM GATE: ${gateNote}\nDer Kopf, der das Gate vertritt, MUSS das im Klartext benennen.`
     : "";
   return `NUTZER-IDEE:\n${idea.trim()}${gate}\n\nStarte direkt mit dem ersten Beitrag im Format [KOPF_ID: Name]. Keine Einleitung.`;
+}
+
+export function buildFollowUpUserMessage(followUp: string): string {
+  return `NACHFRAGE DES NUTZERS:
+${followUp.trim()}
+
+Reagiere mit 2–3 der bereits aktivierten Köpfe — wähle die, die zu dieser Nachfrage am meisten zu sagen haben. Beziehe dich konkret auf den Wortlaut der Nachfrage und auf die zuvor geäußerten Positionen ("Im Anschluss an …", "Anders als zuvor …"). Schliesse mit einer aktualisierten [ERKENNTNIS] und einer neuen [OFFENE FRAGE] ab. Starte direkt mit dem ersten Beitrag im Format [KOPF_ID: Name]. Keine Einleitung.`;
 }

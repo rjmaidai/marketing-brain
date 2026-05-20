@@ -5,9 +5,11 @@ import {
   buildSelectionUserMessage,
   buildDiscussionSystemPrompt,
   buildDiscussionUserMessage,
+  buildFollowUpUserMessage,
 } from "@/lib/brain-prompt";
 import { getHead } from "@/lib/heads";
 import type { HeadSelection } from "@/lib/types";
+
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,9 +41,9 @@ function safeParseSelection(raw: string): HeadSelection | null {
         reason: String(h?.reason ?? "").trim(),
       }))
       .filter((h: { id: string }) => !!getHead(h.id));
-    if (heads.length < 3) return null;
+    if (heads.length < 9) return null;
     return {
-      heads: heads.slice(0, 5),
+      heads: heads.slice(0, 12),
       ritson_gate: parsed.ritson_gate,
       notes: parsed.notes,
     };
@@ -62,7 +64,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { idea?: string };
+  let body: {
+    idea?: string;
+    followUp?: string;
+    headIds?: unknown;
+    previousFollowUps?: unknown;
+    previousBuffers?: unknown;
+  };
   try {
     body = await req.json();
   } catch {
@@ -73,6 +81,9 @@ export async function POST(req: NextRequest) {
   }
 
   const idea = (body.idea ?? "").trim();
+  const followUp = (body.followUp ?? "").trim();
+  const isFollowUp = followUp.length > 0;
+
   if (idea.length < 8) {
     return new Response(
       JSON.stringify({
@@ -88,6 +99,55 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  let followUpHeadIds: string[] = [];
+  let previousFollowUps: string[] = [];
+  let previousBuffers: string[] = [];
+  if (isFollowUp) {
+    if (followUp.length < 3) {
+      return new Response(
+        JSON.stringify({ error: "Nachfrage zu kurz." }),
+        { status: 400, headers: { "content-type": "application/json" } },
+      );
+    }
+    if (followUp.length > 2000) {
+      return new Response(
+        JSON.stringify({ error: "Nachfrage zu lang. Bitte kürzer fassen." }),
+        { status: 400, headers: { "content-type": "application/json" } },
+      );
+    }
+    followUpHeadIds = Array.isArray(body.headIds)
+      ? (body.headIds as unknown[])
+          .map((x) => String(x))
+          .filter((id) => !!getHead(id))
+      : [];
+    if (followUpHeadIds.length === 0) {
+      return new Response(
+        JSON.stringify({
+          error: "Köpfe für Nachfrage fehlen. Bitte Seite neu laden und erneut starten.",
+        }),
+        { status: 400, headers: { "content-type": "application/json" } },
+      );
+    }
+    previousFollowUps = Array.isArray(body.previousFollowUps)
+      ? (body.previousFollowUps as unknown[])
+          .map((x) => (typeof x === "string" ? x : ""))
+          .filter((s) => s.length > 0)
+      : [];
+    previousBuffers = Array.isArray(body.previousBuffers)
+      ? (body.previousBuffers as unknown[])
+          .map((x) => (typeof x === "string" ? x : ""))
+          .filter((s) => s.length > 0)
+      : [];
+    if (previousBuffers.length === 0) {
+      return new Response(
+        JSON.stringify({
+          error: "Vorherige Diskussion fehlt. Bitte Seite neu laden.",
+        }),
+        { status: 400, headers: { "content-type": "application/json" } },
+      );
+    }
+  }
+
   const client = new Anthropic({ apiKey });
 
   const stream = new ReadableStream<Uint8Array>({
@@ -97,74 +157,102 @@ export async function POST(req: NextRequest) {
         controller.enqueue(enc.encode(sse(event, data)));
 
       try {
-        send("status", { phase: "selecting" });
+        let discussionHeadIds: string[];
+        let discussionMessages: Array<{ role: "user" | "assistant"; content: string }>;
 
-        const selectionMsg = await client.messages.create({
-          model: MODEL,
-          max_tokens: 800,
-          temperature: 0.3,
-          system: SELECTION_SYSTEM_PROMPT,
-          messages: [
-            { role: "user", content: buildSelectionUserMessage(idea) },
-          ],
-        });
-
-        const rawSelection = selectionMsg.content
-          .map((b) => (b.type === "text" ? b.text : ""))
-          .join("");
-
-        const selection = safeParseSelection(rawSelection);
-        if (!selection) {
-          send("error", {
-            message:
-              "Der Selektor hat kein gültiges JSON geliefert. Versuch's nochmal mit einer etwas konkreteren Idee.",
+        if (isFollowUp) {
+          discussionHeadIds = followUpHeadIds;
+          const msgs: Array<{ role: "user" | "assistant"; content: string }> = [
+            {
+              role: "user",
+              content: buildDiscussionUserMessage(idea, undefined),
+            },
+            { role: "assistant", content: previousBuffers[0] },
+          ];
+          for (let i = 0; i < previousFollowUps.length; i++) {
+            msgs.push({
+              role: "user",
+              content: buildFollowUpUserMessage(previousFollowUps[i]),
+            });
+            const buf = previousBuffers[i + 1];
+            if (buf) msgs.push({ role: "assistant", content: buf });
+          }
+          msgs.push({
+            role: "user",
+            content: buildFollowUpUserMessage(followUp),
           });
-          controller.close();
-          return;
-        }
+          discussionMessages = msgs;
+        } else {
+          send("status", { phase: "selecting" });
 
-        const enrichedHeads = selection.heads
-          .map((h) => {
-            const head = getHead(h.id);
-            return head
-              ? {
-                  id: head.id,
-                  name: head.name,
-                  segment: head.segment,
-                  color: head.color,
-                  reason: h.reason,
-                }
-              : null;
-          })
-          .filter((h): h is NonNullable<typeof h> => !!h);
+          const selectionMsg = await client.messages.create({
+            model: MODEL,
+            max_tokens: 800,
+            temperature: 0.3,
+            system: SELECTION_SYSTEM_PROMPT,
+            messages: [
+              { role: "user", content: buildSelectionUserMessage(idea) },
+            ],
+          });
 
-        send("selection", {
-          heads: enrichedHeads,
-          ritson_gate: selection.ritson_gate ?? { triggered: false },
-          notes: selection.notes ?? "",
-        });
+          const rawSelection = selectionMsg.content
+            .map((b) => (b.type === "text" ? b.text : ""))
+            .join("");
 
-        send("status", { phase: "discussing" });
+          const selection = safeParseSelection(rawSelection);
+          if (!selection) {
+            send("error", {
+              message:
+                "Der Selektor hat kein gültiges JSON geliefert. Versuch's nochmal mit einer etwas konkreteren Idee.",
+            });
+            controller.close();
+            return;
+          }
 
-        const discussionSystem = buildDiscussionSystemPrompt(
-          enrichedHeads.map((h) => h.id),
-        );
-        const gateNote =
-          selection.ritson_gate?.triggered && selection.ritson_gate.note
-            ? selection.ritson_gate.note
-            : undefined;
+          const enrichedHeads = selection.heads
+            .map((h) => {
+              const head = getHead(h.id);
+              return head
+                ? {
+                    id: head.id,
+                    name: head.name,
+                    segment: head.segment,
+                    color: head.color,
+                    reason: h.reason,
+                  }
+                : null;
+            })
+            .filter((h): h is NonNullable<typeof h> => !!h);
 
-        const discussionStream = await client.messages.stream({
-          model: MODEL,
-          max_tokens: 2400,
-          temperature: 0.8,
-          system: discussionSystem,
-          messages: [
+          send("selection", {
+            heads: enrichedHeads,
+            ritson_gate: selection.ritson_gate ?? { triggered: false },
+            notes: selection.notes ?? "",
+          });
+
+          discussionHeadIds = enrichedHeads.map((h) => h.id);
+          const gateNote =
+            selection.ritson_gate?.triggered && selection.ritson_gate.note
+              ? selection.ritson_gate.note
+              : undefined;
+          discussionMessages = [
             {
               role: "user",
               content: buildDiscussionUserMessage(idea, gateNote),
             },
-          ],
+          ];
+        }
+
+        send("status", { phase: "discussing" });
+
+        const discussionSystem = buildDiscussionSystemPrompt(discussionHeadIds);
+
+        const discussionStream = await client.messages.stream({
+          model: MODEL,
+          max_tokens: isFollowUp ? 3000 : 6000,
+          temperature: 0.8,
+          system: discussionSystem,
+          messages: discussionMessages,
         });
 
         for await (const event of discussionStream) {
