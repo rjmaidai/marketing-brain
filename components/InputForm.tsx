@@ -5,8 +5,8 @@ import { FormEvent, useState } from "react";
 interface InputFormProps {
   isLoading: boolean;
   onSubmit: (idea: string) => void;
-  onReset: () => void;
-  hasResult: boolean;
+  onReset?: () => void;
+  hasResult?: boolean;
 }
 
 export function InputForm({
@@ -34,16 +34,16 @@ export function InputForm({
         value={idea}
         onChange={(e) => setIdea(e.target.value)}
         disabled={isLoading}
-        placeholder="z.B. Ich möchte eine neue App für Eltern launchen, die …"
+        placeholder="z.B. Ich moechte eine neue App fuer Eltern launchen, die ..."
         className="w-full min-h-[140px] resize-y rounded-xl border border-white/10 bg-surface/40 p-4 text-base leading-relaxed text-ink placeholder:text-muted focus:border-gold/60 focus:outline-none focus:ring-1 focus:ring-gold/40 disabled:opacity-60"
         rows={5}
       />
       <div className="mt-3 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-muted">
-          1–3 Sätze reichen. Je konkreter, desto schärfer die Diskussion.
+          1-3 Saetze reichen. Je konkreter, desto schaerfer die Diskussion.
         </p>
         <div className="flex items-center gap-2">
-          {hasResult && !isLoading && (
+          {hasResult && !isLoading && onReset && (
             <button
               type="button"
               onClick={() => {
@@ -60,7 +60,7 @@ export function InputForm({
             disabled={isLoading || idea.trim().length < 8}
             className="rounded-md bg-gold px-4 py-2 text-sm font-medium uppercase tracking-wider text-bg transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isLoading ? "Köpfe denken …" : "Lass die Köpfe schreiben"}
+            {isLoading ? "Koepfe denken ..." : "Lass die Koepfe schreiben"}
           </button>
         </div>
       </div>
