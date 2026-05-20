@@ -168,7 +168,7 @@ export default function Page()
                       </h1>
                       <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted sm:text-base">
                                 Beschreibe deine Idee oder dein Problem. Ein Kopf pro Segment des
-                                Marketing-Hirns schreibt mit — und liefert dir am Ende einen
+                                                                Marketing-Hirns schreibt mit - und liefert dir am Ende einen
                                 belastbaren Nenner und eine offene Frage, die du selbst beantworten
                                 musst. Du kannst nachhaken.
                       </p>
