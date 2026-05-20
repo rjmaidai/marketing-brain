@@ -6,6 +6,10 @@ Frage, die der Nutzer selbst beantworten muss.
 
 Kein Chatbot. Kein Q&A. Reibung statt Glättung.
 
+## Du willst's einfach nur benutzen?
+
+→ **[DEPLOY.md](./DEPLOY.md)** — Schritt-für-Schritt-Anleitung zum Live-Stellen via Vercel. Kein Terminal nötig.
+
 ## Stack
 
 - Next.js 14 (App Router) + TypeScript
