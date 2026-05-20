@@ -30,6 +30,7 @@ Wenn Deploy fehlschlägt → Screenshot der Fehlermeldung anfordern, dann Build-
 - User ist deutschsprachig, Schweizer Deutsch ok.
 - User ist FRUSTRIERT — letzte Session ist abgestürzt, viel Zeit verloren. **NICHT raten, NICHT spekulieren.** Konkrete Schritte basierend auf dem was er zeigt. Bei Unklarheit: Screenshot anfordern.
 - User möchte keine Erklärungen über "warum" — nur klare Klick-Anweisungen.
+- **Sprache: einfach, kurz, KEINE Fachwörter.** Nicht "branch", "merge", "deploy", "commit", "PR", "env var" etc. — wenn nötig umschreiben ("Nebenversion", "rüberschieben", "Vercel baut neu", "Schalter in Vercel"). Eine Frage = ja/nein. Wenn was unklar bleibt, User wird wütend (zu Recht).
 - User hat KEINEN Zugriff auf Terminal / Code. Er arbeitet nur im Browser (Vercel UI).
 - Claude (du in der Cloud-Sandbox) hat KEINEN Zugriff auf den Browser des Users, keine Chrome-Extension, kein Vercel-API-Token. Du kannst NUR ins Repo committen/pushen.
 
