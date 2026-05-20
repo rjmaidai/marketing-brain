@@ -7,7 +7,7 @@ import { HeadsSection } from "@/components/HeadsSection";
 
 type Phase = "idle" | "selecting" | "discussing" | "done" | "error";
 
-export default function Page() {
+export default function Page() 
     const [phase, setPhase] = useState<Phase>("idle");
     const [idea, setIdea] = useState<string>("");
     const [rounds, setRounds] = useState<Round[]>([]);
@@ -162,17 +162,17 @@ export default function Page() {
               <header className="mb-8">
                       <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-gold">
                                 Marketing Brain
-                      </p>p>
+                      </p>
                       <h1 className="mt-2 text-2xl font-semibold leading-tight sm:text-3xl">
                                 Ein strukturierter Denkraum.
-                      </h1>h1>
+                      </h1>
                       <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted sm:text-base">
                                 Beschreibe deine Idee oder dein Problem. Ein Kopf pro Segment des
                                 Marketing-Hirns schreibt mit — und liefert dir am Ende einen
                                 belastbaren Nenner und eine offene Frage, die du selbst beantworten
                                 musst. Du kannst nachhaken.
-                      </p>p>
-              </header>header>
+                      </p>
+              </header>
         
               <InputForm
                         isLoading={isLoading}
@@ -195,8 +195,8 @@ export default function Page() {
         
               <footer className="mt-auto pt-16 text-center text-[11px] uppercase tracking-[0.18em] text-muted">
                       45 Köpfe · 9 Segmente · Reibung statt Glättung
-              </footer>footer>
-        </main>main>
+              </footer>
+        </main>
       );
 }
 
