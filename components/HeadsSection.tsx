@@ -15,11 +15,11 @@ export function HeadsSection() {
   return (
         <section className="mt-16 border-t border-white/10 pt-12">
               <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-gold mb-2">
-                      Die 45 Köpfe
-              </p>p>
+                                              Die 45 Koepfe
+              </p>
               <p className="text-sm text-muted mb-8 max-w-lg">
-                      9 Segmente. Je 5 Experten. Klick auf ein Segment um die Köpfe zu sehen.
-              </p>p>
+                                      9 Segmente. Je 5 Experten. Klick auf ein Segment um die Koepfe zu sehen.
+              </p>
         
           {/* Segment buttons */}
               <div className="flex flex-wrap gap-2 mb-8">
@@ -43,11 +43,11 @@ export function HeadsSection() {
                                                                   style={{ background: s.color }}
                                                                 />
                                     {seg}
-                                                <span className="opacity-50 ml-1">{isOpen ? "▲" : "▼"}</span>
-                                  </button>button>
+                                                                        <span className="opacity-50 ml-1">{isOpen ? "+" : "-"}</span>span></span>
+                                  </button>
                                 );
         })}
-              </div>div>
+              </div>
         
           {/* Open segment panel */}
           {openSegment && (() => {
