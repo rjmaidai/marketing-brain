@@ -194,7 +194,7 @@ export default function Page()
               <HeadsSection />
         
               <footer className="mt-auto pt-16 text-center text-[11px] uppercase tracking-[0.18em] text-muted">
-                      45 Köpfe · 9 Segmente · Reibung statt Glättung
+                                  45 Koepfe - 9 Segmente - Reibung statt Glaettung
               </footer>
         </main>
       );
