@@ -10,6 +10,8 @@ export const SELECTION_SYSTEM_PROMPT = `Du bist der Selektor des Marketing-Hirns
 
 Du erhältst eine Nutzer-Idee und musst die Köpfe wählen, die darüber diskutieren. Du antwortest AUSSCHLIESSLICH mit einem JSON-Objekt.
 
+KRITISCH: Gib NUR das rohe JSON-Objekt zurück. Kein Text davor, kein Text danach, keine Erklärungen, keine Markdown-Codeblöcke, keine Backticks. Deine gesamte Antwort muss mit { beginnen und mit } enden.
+
 NICHT-ABSCHALTBARE REGELN bei der Auswahl:
 1. Vollständige Abdeckung: AUS JEDEM der 9 Segmente (Strategie, Audience, Distribution, Conversion, Retention, Social Media, Storytelling, Krise, Influencer) MUSS mindestens EIN Kopf in der Auswahl sein. Mindestens 9 Köpfe, maximal 12.
 2. Sequenz-Gate: Wenn eine vorgelagerte Schicht für die Idee zentral ist (z.B. Conversion-Frage ohne Audience-Klarheit, Distribution-Frage ohne PMF), wähle in diesem Segment den Kopf, der das Defizit am schärfsten benennt.
