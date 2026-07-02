@@ -38,9 +38,15 @@ export default function App() {
     saveProgress({ furthest: Math.max(prev.furthest, index), mastered })
   }, [index, screen, mastered])
 
-  // „Drücke auf weiter", sobald der grosse Weiter-Knopf erscheint (Beat zu Ende).
+  // „Drücke auf weiter" NICHT sofort — sondern als sanfte Erinnerung erst nach
+  // 10 s und dann alle 10 s, falls niemand drückt. Sobald es weitergeht (Knopf
+  // gedrückt -> Screen/ended ändert sich), stoppt die Erinnerung.
   useEffect(() => {
-    if (screen === 'beat' && ended) void playSample(voiceSrc(VOICE.drueckeWeiter))
+    if (!(screen === 'beat' && ended)) return
+    const id = window.setInterval(() => {
+      void playSample(voiceSrc(VOICE.drueckeWeiter))
+    }, 10000)
+    return () => window.clearInterval(id)
   }, [ended, screen])
 
   const clearFade = () => {
