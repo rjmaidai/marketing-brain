@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ensureMic } from '../lib/mic'
 import { resumeAudio, preloadSamples } from '../lib/audio'
 import { preloadFeedback } from '../lib/feedback'
-import { SPIELSATZ, spielsatzSrc } from '../data/story'
+import { SPIELSATZ, spielsatzSrc, VOICE, voiceSrc } from '../data/story'
 
 // Ruhiger Start. Hier wird (einmal) die Mikrofon-Erlaubnis geholt — mit einem
 // Wort für die Bezugsperson, warum. Danach beginnt die Geschichte.
@@ -23,7 +23,10 @@ export function StartScreen({ hasProgress, onStart }: Props) {
     // Bezugsperson beim Laut einfach weiter.
     void ensureMic()
     resumeAudio() // Audio-Kanal in der Geste freischalten (Stimmen, Töne)
-    preloadSamples(Object.values(SPIELSATZ).map(spielsatzSrc)) // Ansagen vorladen
+    preloadSamples([
+      ...Object.values(SPIELSATZ).map(spielsatzSrc),
+      ...Object.values(VOICE).map(voiceSrc),
+    ]) // Ansagen + Stimmen vorladen
     preloadFeedback() // Richtig/Falsch-Bilder + Stimmen vorladen
     onStart(resume)
   }

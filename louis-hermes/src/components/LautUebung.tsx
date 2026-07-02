@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { lautkarteSrc, spielsatzSrc, SPIELSATZ } from '../data/story'
+import { lautkarteSrc, spielsatzSrc, voiceSrc, SPIELSATZ, VOICE } from '../data/story'
 import { ensureMic, resumeMic, currentLevel, micState } from '../lib/mic'
 import { showFeedback } from '../lib/feedback'
 import { playSample, resumeAudio } from '../lib/audio'
@@ -48,8 +48,32 @@ export function LautUebung({ laut, onDone }: Props) {
     cardAdvancedRef.current = false
     const v = cardRef.current
     if (attempt === 1 && v) {
-      v.currentTime = 0
-      v.play().catch(() => advanceCard())
+      // Video jetzt (im Aktivierungsfenster) stumm freischalten, dann ERST
+      // „Hör gut zu" sprechen und danach die Lautkarte (die Mutter) laufen lassen.
+      v.muted = true
+      const pr = v.play()
+      if (pr && typeof pr.then === 'function') {
+        pr.then(() => {
+          v.pause()
+          try {
+            v.currentTime = 0
+          } catch {
+            /* egal */
+          }
+        }).catch(() => {})
+      }
+      playSample(voiceSrc(VOICE.hoerGutZu)).then(() => {
+        if (cardAdvancedRef.current) return
+        const v2 = cardRef.current
+        if (!v2) return
+        v2.muted = false
+        try {
+          v2.currentTime = 0
+        } catch {
+          /* egal */
+        }
+        v2.play().catch(() => advanceCard())
+      })
     } else {
       beginListen()
     }

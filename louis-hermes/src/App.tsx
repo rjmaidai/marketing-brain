@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { BEATS, beatSrc } from './data/story'
+import { BEATS, beatSrc, voiceSrc, VOICE } from './data/story'
 import { loadProgress, saveProgress, resetProgress } from './lib/progress'
+import { playSample } from './lib/audio'
 import { LautUebung } from './components/LautUebung'
 import { SpurenFolgen } from './components/SpurenFolgen'
 import { Merken } from './components/Merken'
@@ -36,6 +37,11 @@ export default function App() {
     const prev = loadProgress()
     saveProgress({ furthest: Math.max(prev.furthest, index), mastered })
   }, [index, screen, mastered])
+
+  // „Drücke auf weiter", sobald der grosse Weiter-Knopf erscheint (Beat zu Ende).
+  useEffect(() => {
+    if (screen === 'beat' && ended) void playSample(voiceSrc(VOICE.drueckeWeiter))
+  }, [ended, screen])
 
   const clearFade = () => {
     if (fadeTimer.current) {

@@ -56,6 +56,13 @@ export const SPIELSATZ: Record<TrainingType, string> = {
   puzzle: 'spiel_waehle_richtige_teil.mp3',
 }
 
+// Zusätzliche Sprach-Ansagen.
+export const VOICE = {
+  hoerGutZu: 'hoer_gut_zu.mp3', // vor dem Start der Lautkarte
+  drueckeWeiter: 'druecke_weiter.mp3', // wenn der grosse Weiter-Knopf erscheint
+}
+export const voiceSrc = (file: string) => `${import.meta.env.BASE_URL}assets/voice/${file}`
+
 export const beatSrc = (file: string) => `${import.meta.env.BASE_URL}assets/beats/${file}`
 export const lautkarteSrc = (laut: string) => `${import.meta.env.BASE_URL}assets/lautkarten/Lautkarte_${laut}.mp4`
 export const spielsatzSrc = (file: string) => `${import.meta.env.BASE_URL}assets/spielsaetze/${file}`
