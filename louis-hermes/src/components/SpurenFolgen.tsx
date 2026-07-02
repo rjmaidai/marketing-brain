@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { spielsatzSrc, SPIELSATZ } from '../data/story'
 import { resumeMic } from '../lib/mic'
 import { showFeedback } from '../lib/feedback'
+import { playSample, resumeAudio } from '../lib/audio'
 
 // Spiel „Spuren folgen": Louis' Finger zieht Hermès' Fährte nach.
 // Eine ruhige Linie über den Bildschirm. Kein Timer — die Linie wartet.
@@ -37,9 +38,8 @@ export function SpurenFolgen({ seed, onDone }: Props) {
 
   useEffect(() => {
     resumeMic()
-    const a = new Audio(spielsatzSrc(SPIELSATZ.spuren))
-    a.play().catch(() => {})
-    return () => a.pause()
+    resumeAudio()
+    void playSample(spielsatzSrc(SPIELSATZ.spuren))
   }, [])
 
   const pathD = useMemo(

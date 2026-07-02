@@ -3,6 +3,7 @@ import { spielsatzSrc, SPIELSATZ } from '../data/story'
 import { resumeMic } from '../lib/mic'
 import { capturePoster } from '../lib/poster'
 import { showFeedback } from '../lib/feedback'
+import { playSample, resumeAudio } from '../lib/audio'
 
 // Spiel „Bild-Puzzle": das richtige Teil wird ausgewählt und eingesetzt.
 // Es zeigt das NÄCHSTE Bild der Geschichte mit einer Lücke — das Kind
@@ -56,9 +57,8 @@ export function BildPuzzle({ seed, nextBeatSrc, onDone }: Props) {
   useEffect(() => {
     if (!ready) return
     resumeMic()
-    const a = new Audio(spielsatzSrc(SPIELSATZ.puzzle))
-    a.play().catch(() => {})
-    return () => a.pause()
+    resumeAudio()
+    void playSample(spielsatzSrc(SPIELSATZ.puzzle))
   }, [ready])
 
   // Welches Feld fehlt + welche drei Teile angeboten werden (stabil aus Seed).

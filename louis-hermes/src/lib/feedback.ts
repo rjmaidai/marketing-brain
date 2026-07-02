@@ -2,15 +2,23 @@
 // „richtig" = Daumen hoch (Lob), „falsch" = freundliches Schulterzucken (nochmal).
 // Bewusst ermutigend, nie bestrafend.
 //
-// Imperativ als kurze Ebene über allem — so kann jedes Spiel es mit einer Zeile
-// auslösen, ohne eigenen State. Löst sich auf, wenn die Stimme fertig ist.
+// WICHTIG (aus dem Test): immer GLEICH — die Ebene bleibt genau so lange wie die
+// Stimme, spielt die Stimme zuverlässig über den freigeschalteten Audio-Kanal,
+// und ist NICHT wegklickbar (deckt alles, hat keinen Schliessen-Tipp).
+
+import { playSample, preloadSamples } from './audio'
 
 type Kind = 'richtig' | 'falsch'
 
 const imgSrc = (k: Kind) => `${import.meta.env.BASE_URL}assets/feedback/${k}.png`
 const audioSrc = (k: Kind) => `${import.meta.env.BASE_URL}assets/feedback/${k}.mp3`
 
-// Bilder vorladen, damit die Rückmeldung ohne Ruckeln erscheint.
+// Mindest-Anzeigedauer, damit eine kurze Stimme nicht nur „aufblitzt".
+const MIN_MS = 1600
+
+const delay = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms))
+
+// Bilder + Stimmen vorladen, damit die Rückmeldung ohne Ruckeln/Lücke erscheint.
 let preloaded = false
 export function preloadFeedback() {
   if (preloaded) return
@@ -19,34 +27,28 @@ export function preloadFeedback() {
     const im = new Image()
     im.src = imgSrc(k)
   })
+  preloadSamples((['richtig', 'falsch'] as Kind[]).map(audioSrc))
 }
 
-export function showFeedback(kind: Kind): Promise<void> {
-  return new Promise((resolve) => {
-    const overlay = document.createElement('div')
-    overlay.className = 'feedback-overlay'
-    const img = document.createElement('img')
-    img.className = 'feedback-img'
-    img.src = imgSrc(kind)
-    img.alt = ''
-    overlay.appendChild(img)
-    document.body.appendChild(overlay)
-    // eine Bildaufbau-Runde warten, dann sanft einblenden
-    requestAnimationFrame(() => overlay.classList.add('show'))
+export async function showFeedback(kind: Kind): Promise<void> {
+  const overlay = document.createElement('div')
+  overlay.className = 'feedback-overlay'
+  const img = document.createElement('img')
+  img.className = 'feedback-img'
+  img.src = imgSrc(kind)
+  img.alt = ''
+  overlay.appendChild(img)
+  document.body.appendChild(overlay)
+  // eine Bildaufbau-Runde warten, dann sanft einblenden
+  await new Promise<void>((r) => requestAnimationFrame(() => r()))
+  overlay.classList.add('show')
 
-    const audio = new Audio(audioSrc(kind))
-    let done = false
-    const finish = () => {
-      if (done) return
-      done = true
-      overlay.classList.remove('show')
-      window.setTimeout(() => overlay.remove(), 450)
-      resolve()
-    }
-    audio.onended = finish
-    audio.onerror = finish
-    audio.play().catch(finish)
-    // Sicherheitsnetz, falls die Stimme mal nicht lädt.
-    window.setTimeout(finish, 4500)
-  })
+  // Ebene bleibt exakt so lange wie die Stimme (fester Asset -> immer gleich),
+  // mindestens aber MIN_MS. Zuverlässig über den Web-Audio-Kanal.
+  await Promise.all([playSample(audioSrc(kind)), delay(MIN_MS)])
+  await delay(250)
+
+  overlay.classList.remove('show')
+  await delay(450)
+  overlay.remove()
 }

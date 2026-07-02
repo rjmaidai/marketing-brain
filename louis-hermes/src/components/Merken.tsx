@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { spielsatzSrc, SPIELSATZ } from '../data/story'
 import { resumeMic } from '../lib/mic'
 import { capturePoster } from '../lib/poster'
-import { playTone, resumeTones } from '../lib/tone'
+import { playTone, resumeAudio, playSample } from '../lib/audio'
 import { showFeedback } from '../lib/feedback'
 
 // Spiel „Merken": eine kurze Reihenfolge leuchtet auf, dann tippt das Kind sie nach.
@@ -96,12 +96,16 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
   useEffect(() => {
     if (!ready) return
     resumeMic()
-    resumeTones()
-    const a = new Audio(spielsatzSrc(SPIELSATZ.merken))
-    a.play().catch(() => {})
-    showSequence()
+    resumeAudio()
+    let alive = true
+    // ERST die Ansage „Merke dir die Reihenfolge" zu Ende sprechen,
+    // DANN die Abfolge starten — sonst laufen Stimme und Aufleuchten
+    // gleichzeitig und verwirren.
+    playSample(spielsatzSrc(SPIELSATZ.merken)).then(() => {
+      if (alive) showSequence()
+    })
     return () => {
-      a.pause()
+      alive = false
       clearTimers()
     }
   }, [ready, showSequence])

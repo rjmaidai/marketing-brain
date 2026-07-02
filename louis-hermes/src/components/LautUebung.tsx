@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { lautkarteSrc, spielsatzSrc, SPIELSATZ } from '../data/story'
 import { ensureMic, resumeMic, currentLevel, micState } from '../lib/mic'
 import { showFeedback } from '../lib/feedback'
+import { playSample, resumeAudio } from '../lib/audio'
 
 // Laut-Übung.
 // Ablauf: Lautkarte spielt (die Mutter spricht den Laut) → „Jetzt bist du dran"
@@ -24,7 +25,6 @@ export function LautUebung({ laut, onDone }: Props) {
   const [attempt, setAttempt] = useState(1)
   const cardRef = useRef<HTMLVideoElement>(null)
   const orbRef = useRef<HTMLDivElement>(null)
-  const cueRef = useRef<HTMLAudioElement | null>(null)
   const rafRef = useRef<number | null>(null)
   const doneRef = useRef(false)
   // Damit „Jetzt bist du dran" nicht erst am Videoende kommt: sobald die Mutter
@@ -35,9 +35,9 @@ export function LautUebung({ laut, onDone }: Props) {
   // Beim ersten Betreten: Mikrofon-Kette sicherstellen (Erlaubnis kam am Start).
   useEffect(() => {
     void ensureMic()
+    resumeAudio()
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
-      cueRef.current?.pause()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -77,11 +77,8 @@ export function LautUebung({ laut, onDone }: Props) {
 
   function playCue(after: () => void) {
     resumeMic()
-    const a = new Audio(spielsatzSrc(SPIELSATZ.laut))
-    cueRef.current = a
-    a.onended = after
-    a.onerror = after
-    a.play().catch(after)
+    // Zuverlässig über den freigeschalteten Audio-Kanal (nicht mehr <audio>).
+    playSample(spielsatzSrc(SPIELSATZ.laut)).then(after)
   }
 
   function beginListen() {
