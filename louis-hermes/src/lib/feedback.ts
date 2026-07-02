@@ -2,9 +2,12 @@
 // „richtig" = Daumen hoch (Lob), „falsch" = freundliches Schulterzucken (nochmal).
 // Bewusst ermutigend, nie bestrafend.
 //
-// WICHTIG (aus dem Test): immer GLEICH — die Ebene bleibt genau so lange wie die
-// Stimme, spielt die Stimme zuverlässig über den freigeschalteten Audio-Kanal,
-// und ist NICHT wegklickbar (deckt alles, hat keinen Schliessen-Tipp).
+// Ruhe zwischen den Phasen (aus dem Test):
+// - kommt NICHT abrupt: kurze Pause + langsames Einblenden.
+// - bleibt genau so lange wie die Stimme (fester Wert -> immer gleich).
+// - ist NICHT wegklickbar.
+// - „überbrückt" den Wechsel: die Ebene deckt noch, WÄHREND der nächste Beat
+//   dahinter schon einblendet — so blitzt nie kurz das alte Training auf.
 
 import { playSample, preloadSamples } from './audio'
 
@@ -13,12 +16,15 @@ type Kind = 'richtig' | 'falsch'
 const imgSrc = (k: Kind) => `${import.meta.env.BASE_URL}assets/feedback/${k}.png`
 const audioSrc = (k: Kind) => `${import.meta.env.BASE_URL}assets/feedback/${k}.mp3`
 
-// Mindest-Anzeigedauer, damit eine kurze Stimme nicht nur „aufblitzt".
-const MIN_MS = 1600
+const PRE_MS = 320 // kurze Ruhe, bevor das Lob/‌„nochmal" erscheint
+const MIN_MS = 1700 // Mindestdauer, damit nichts nur „aufblitzt"
+const HOLD_MS = 450 // ruhig stehen lassen
+const BRIDGE_MS = 550 // Ebene deckt noch, während der nächste Beat einblendet
 
 const delay = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms))
+const raf = () => new Promise<void>((r) => requestAnimationFrame(() => r()))
 
-// Bilder + Stimmen vorladen, damit die Rückmeldung ohne Ruckeln/Lücke erscheint.
+// Bilder + Stimmen vorladen, damit die Rückmeldung ohne Ruckeln erscheint.
 let preloaded = false
 export function preloadFeedback() {
   if (preloaded) return
@@ -39,16 +45,21 @@ export async function showFeedback(kind: Kind): Promise<void> {
   img.alt = ''
   overlay.appendChild(img)
   document.body.appendChild(overlay)
-  // eine Bildaufbau-Runde warten, dann sanft einblenden
-  await new Promise<void>((r) => requestAnimationFrame(() => r()))
+
+  // kurze Ruhe, dann langsam einblenden
+  await delay(PRE_MS)
+  await raf()
   overlay.classList.add('show')
 
-  // Ebene bleibt exakt so lange wie die Stimme (fester Asset -> immer gleich),
-  // mindestens aber MIN_MS. Zuverlässig über den Web-Audio-Kanal.
+  // so lange wie die Stimme (mind. MIN_MS), dann ruhig halten
   await Promise.all([playSample(audioSrc(kind)), delay(MIN_MS)])
-  await delay(250)
+  await delay(HOLD_MS)
 
-  overlay.classList.remove('show')
-  await delay(450)
-  overlay.remove()
+  // Ebene bleibt zunächst DECKEND und wird erst nach einer Brücke ausgeblendet.
+  // Wir lösen jetzt auf -> der Aufrufer wechselt zum nächsten Beat, der HINTER
+  // dem noch deckenden Overlay langsam einblendet. Danach fadet das Overlay weg.
+  window.setTimeout(() => {
+    overlay.classList.remove('show')
+    window.setTimeout(() => overlay.remove(), 750)
+  }, BRIDGE_MS)
 }
