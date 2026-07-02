@@ -26,6 +26,10 @@ export function LautUebung({ laut, onDone }: Props) {
   const cueRef = useRef<HTMLAudioElement | null>(null)
   const rafRef = useRef<number | null>(null)
   const doneRef = useRef(false)
+  // Damit „Jetzt bist du dran" nicht erst am Videoende kommt: sobald die Mutter
+  // den Laut gesprochen hat, schneiden wir den langsamen Schluss ab.
+  const cardAdvancedRef = useRef(false)
+  const listenAtRef = useRef(3.6)
 
   // Beim ersten Betreten: Mikrofon-Kette sicherstellen (Erlaubnis kam am Start).
   useEffect(() => {
@@ -40,15 +44,25 @@ export function LautUebung({ laut, onDone }: Props) {
   // Karte abspielen (nur beim 1. Versuch die ganze Karte, danach nur noch die Ansage).
   useEffect(() => {
     if (phase !== 'card') return
+    cardAdvancedRef.current = false
     const v = cardRef.current
     if (attempt === 1 && v) {
       v.currentTime = 0
-      v.play().catch(() => beginListen())
+      v.play().catch(() => advanceCard())
     } else {
       beginListen()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, attempt])
+
+  // Früh weiter: sobald der Laut gesprochen ist, den Tail überspringen und
+  // direkt zu „Jetzt bist du dran" + Zuhören gehen.
+  function advanceCard() {
+    if (cardAdvancedRef.current) return
+    cardAdvancedRef.current = true
+    cardRef.current?.pause()
+    beginListen()
+  }
 
   function playCue(after: () => void) {
     resumeMic()
@@ -171,7 +185,15 @@ export function LautUebung({ laut, onDone }: Props) {
               src={lautkarteSrc(laut)}
               playsInline
               preload="auto"
-              onEnded={() => beginListen()}
+              onLoadedMetadata={(e) => {
+                const d = e.currentTarget.duration || 6
+                // kurz nach dem gesprochenen Laut, aber vor dem langsamen Schluss
+                listenAtRef.current = Math.min(4.2, Math.max(3.0, d - 2.2))
+              }}
+              onTimeUpdate={(e) => {
+                if (e.currentTarget.currentTime >= listenAtRef.current) advanceCard()
+              }}
+              onEnded={() => advanceCard()}
             />
           </div>
         ) : (

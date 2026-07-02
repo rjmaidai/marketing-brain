@@ -145,7 +145,7 @@ export function BildPuzzle({ seed, nextBeatSrc, onDone }: Props) {
                 aria-label={`Teil ${i + 1}`}
                 onClick={() => choose(i)}
                 style={{
-                  width: 116,
+                  width: 'min(40vw, 220px)',
                   aspectRatio: '4 / 3',
                   height: 'auto',
                   backgroundImage: `url(${img})`,
@@ -218,7 +218,13 @@ function FarbPuzzle({ seed, onDone }: { seed: number; onDone: () => void }) {
                 className="piece"
                 aria-label={`Teil ${i + 1}`}
                 onClick={() => choose(i)}
-                style={{ width: 96, height: 96, background: BANDS[bandIdx], opacity: wrong === i ? 0.4 : 1 }}
+                style={{
+                  width: 'min(28vw, 170px)',
+                  aspectRatio: '1',
+                  height: 'auto',
+                  background: BANDS[bandIdx],
+                  opacity: wrong === i ? 0.4 : 1,
+                }}
               />
             ))}
           </div>

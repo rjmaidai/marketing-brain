@@ -113,28 +113,38 @@ export default function App() {
       {/* Basis-Ebene: das durchgehende Beat-Video. Immer im DOM, damit es
           freigeschaltet bleibt. Trainings und Startbild liegen als Ebene darüber. */}
       <div className="stage">
-        <div className="media-frame" onClick={() => ended && replayBeat()}>
+        <div className="media-frame">
           <video
             ref={videoRef}
             playsInline
             preload="auto"
             onEnded={() => setEnded(true)}
           />
+          {screen === 'beat' && ended && (
+            <>
+              {/* Riesiges Weiter-Ziel ÜBER dem ganzen Beat — kaum zu verfehlen. */}
+              <button
+                className="advance-overlay"
+                aria-label={isLast ? 'Von vorne beginnen' : 'Weiter'}
+                onClick={() => (isLast ? restart() : afterBeat())}
+              >
+                <span className="advance-dot" />
+                <span className="advance-label">{isLast ? 'Nochmal von vorn' : 'Weiter'}</span>
+              </button>
+              {/* Kleiner Knopf für die Bezugsperson: Stimme nochmal hören. */}
+              <button
+                className="replay-corner"
+                aria-label="Nochmal hören"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  replayBeat()
+                }}
+              >
+                ↻
+              </button>
+            </>
+          )}
         </div>
-        {screen === 'beat' && ended && (
-          <div className="tap-hint">
-            <button
-              className="pulse-dot"
-              aria-label={isLast ? 'Von vorne beginnen' : 'Weiter'}
-              onClick={(e) => {
-                e.stopPropagation()
-                if (isLast) restart()
-                else afterBeat()
-              }}
-            />
-            <span className="tap-label">{isLast ? 'Nochmal von vorn' : 'Weiter'}</span>
-          </div>
-        )}
       </div>
 
       {screen === 'start' && (
