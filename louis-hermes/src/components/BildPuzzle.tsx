@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { spielsatzSrc, SPIELSATZ } from '../data/story'
 import { resumeMic } from '../lib/mic'
 import { capturePoster } from '../lib/poster'
@@ -37,8 +37,22 @@ export function BildPuzzle({ seed, nextBeatSrc, onDone }: Props) {
   const [ready, setReady] = useState(false)
   const [placed, setPlaced] = useState(false)
   const [wrong, setWrong] = useState<number | null>(null)
+  const [asked, setAsked] = useState(false) // erst klickbar, wenn die Frage gestellt wurde
   const doneRef = useRef(false)
   const wrongRef = useRef(0)
+  const mountedRef = useRef(true)
+  useEffect(() => () => void (mountedRef.current = false), [])
+
+  // Die Aufgabe stellen: „Wähle das richtige Teil" sprechen; erst DANACH ist das
+  // Spiel klickbar. Wird am Anfang und nach jedem Fehlversuch neu benutzt.
+  const askTask = useCallback(() => {
+    setAsked(false)
+    resumeAudio()
+    playSample(spielsatzSrc(SPIELSATZ.puzzle)).then(() => {
+      if (!mountedRef.current || doneRef.current) return
+      setAsked(true)
+    })
+  }, [])
 
   // Standbild aus dem nächsten Beat holen (oder ruhig ohne Bild weitermachen).
   useEffect(() => {
@@ -60,9 +74,8 @@ export function BildPuzzle({ seed, nextBeatSrc, onDone }: Props) {
   useEffect(() => {
     if (!ready) return
     resumeMic()
-    resumeAudio()
-    void playSample(spielsatzSrc(SPIELSATZ.puzzle))
-  }, [ready])
+    askTask()
+  }, [ready, askTask])
 
   // Welches Feld fehlt + welche drei Teile angeboten werden (stabil aus Seed).
   const { holeIdx, options, correctPos } = useMemo(() => {
@@ -75,7 +88,7 @@ export function BildPuzzle({ seed, nextBeatSrc, onDone }: Props) {
   }, [seed])
 
   function choose(i: number) {
-    if (placed || doneRef.current) return
+    if (!asked || placed || doneRef.current) return
     if (i === correctPos) {
       setPlaced(true)
       doneRef.current = true
@@ -88,7 +101,11 @@ export function BildPuzzle({ seed, nextBeatSrc, onDone }: Props) {
         doneRef.current = true
         showFeedback('falsch').then(onDone)
       } else {
-        showFeedback('falsch').then(() => setWrong(null))
+        // Aufgabe komplett neu stellen (Ansage nochmal), erst danach wieder klickbar.
+        showFeedback('falsch').then(() => {
+          setWrong(null)
+          askTask()
+        })
       }
     }
   }
@@ -106,7 +123,7 @@ export function BildPuzzle({ seed, nextBeatSrc, onDone }: Props) {
 
   // --- Rückfall ohne Bild: warmes Farb-Puzzle (falls kein Standbild da ist) ---
   if (!img) {
-    return <FarbPuzzle seed={seed} onDone={onDone} />
+    return <FarbPuzzle seed={seed} asked={asked} onReask={askTask} onDone={onDone} />
   }
 
   const hole = CELLS[holeIdx]
@@ -148,7 +165,10 @@ export function BildPuzzle({ seed, nextBeatSrc, onDone }: Props) {
 
         {/* Die drei Teile zur Auswahl */}
         {!placed && (
-          <div className="card-row">
+          <div
+            className="card-row"
+            style={{ pointerEvents: asked ? 'auto' : 'none', opacity: asked ? 1 : 0.5, transition: 'opacity 300ms ease' }}
+          >
             {options.map((cellIdx, i) => (
               <button
                 key={i}
@@ -176,7 +196,17 @@ export function BildPuzzle({ seed, nextBeatSrc, onDone }: Props) {
 // Warmes, ruhiges Farb-Puzzle als Rückfall, wenn kein Standbild geladen werden kann.
 const BANDS = ['#a9c6d8', '#e0a878', '#8aa06a', '#c8794a']
 
-function FarbPuzzle({ seed, onDone }: { seed: number; onDone: () => void }) {
+function FarbPuzzle({
+  seed,
+  asked,
+  onReask,
+  onDone,
+}: {
+  seed: number
+  asked: boolean
+  onReask: () => void
+  onDone: () => void
+}) {
   const [placed, setPlaced] = useState(false)
   const [wrong, setWrong] = useState<number | null>(null)
   const doneRef = useRef(false)
@@ -192,7 +222,7 @@ function FarbPuzzle({ seed, onDone }: { seed: number; onDone: () => void }) {
   }, [seed])
 
   function choose(i: number) {
-    if (placed || doneRef.current) return
+    if (!asked || placed || doneRef.current) return
     if (i === correctIdx) {
       setPlaced(true)
       doneRef.current = true
@@ -205,7 +235,11 @@ function FarbPuzzle({ seed, onDone }: { seed: number; onDone: () => void }) {
         doneRef.current = true
         showFeedback('falsch').then(onDone)
       } else {
-        showFeedback('falsch').then(() => setWrong(null))
+        // Aufgabe neu stellen (Ansage nochmal), erst danach wieder klickbar.
+        showFeedback('falsch').then(() => {
+          setWrong(null)
+          onReask()
+        })
       }
     }
   }
@@ -230,7 +264,10 @@ function FarbPuzzle({ seed, onDone }: { seed: number; onDone: () => void }) {
           {placed && <rect x={150} y={gapY} width={120} height={bandH} fill={BANDS[gapBand]} rx={6} />}
         </svg>
         {!placed && (
-          <div className="card-row">
+          <div
+            className="card-row"
+            style={{ pointerEvents: asked ? 'auto' : 'none', opacity: asked ? 1 : 0.5, transition: 'opacity 300ms ease' }}
+          >
             {options.map((bandIdx, i) => (
               <button
                 key={i}

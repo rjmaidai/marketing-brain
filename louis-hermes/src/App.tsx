@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { BEATS, beatSrc } from './data/story'
+import { BEATS, beatSrc, makeLautAssignment } from './data/story'
 import { loadProgress, saveProgress, resetProgress } from './lib/progress'
 import { LautUebung } from './components/LautUebung'
 import { SpurenFolgen } from './components/SpurenFolgen'
@@ -15,6 +15,8 @@ export default function App() {
   const [ended, setEnded] = useState(false)
   const [beatFaded, setBeatFaded] = useState(false) // Bild sichtbar (eingeblendet)?
   const [mastered, setMastered] = useState<string[]>(() => loadProgress().mastered)
+  // Lautkarten pro Durchlauf neu gemischt (DIEB bleibt fix, siehe story.ts).
+  const [lautMap, setLautMap] = useState<Record<number, string>>(() => makeLautAssignment())
 
   // EIN durchgehendes Video-Element für ALLE Beats. Es wird beim Start (echte
   // Fingergeste) einmal „freigeschaltet" — danach lässt iPad/Safari jeden
@@ -107,6 +109,7 @@ export default function App() {
 
   function start(resume: boolean) {
     const startIdx = resume ? Math.min(loadProgress().furthest, BEATS.length - 1) : 0
+    setLautMap(makeLautAssignment()) // Lautkarten für diesen Durchlauf neu mischen
     if (!resume) {
       resetProgress()
       setMastered([])
@@ -157,8 +160,8 @@ export default function App() {
   }
 
   function afterLaut(didMaster: boolean) {
-    if (didMaster && beat.training?.laut) {
-      const l = beat.training.laut
+    const l = beat.training?.laut ?? lautMap[beat.id]
+    if (didMaster && l) {
       setMastered((m) => (m.includes(l) ? m : [...m, l]))
     }
     goNextBeat()
@@ -220,6 +223,7 @@ export default function App() {
           key={`t-${beat.id}`}
           beatId={beat.id}
           training={beat.training}
+          laut={beat.training.laut ?? lautMap[beat.id]}
           nextBeatSrc={index < BEATS.length - 1 ? beatSrc(BEATS[index + 1].file) : undefined}
           onLaut={afterLaut}
           onGame={goNextBeat}
@@ -232,19 +236,21 @@ export default function App() {
 function Training({
   beatId,
   training,
+  laut,
   nextBeatSrc,
   onLaut,
   onGame,
 }: {
   beatId: number
   training: NonNullable<(typeof BEATS)[number]['training']>
+  laut: string
   nextBeatSrc?: string
   onLaut: (mastered: boolean) => void
   onGame: () => void
 }) {
   switch (training.type) {
     case 'laut':
-      return <LautUebung laut={training.laut!} onDone={onLaut} />
+      return <LautUebung laut={laut} onDone={onLaut} />
     case 'spuren':
       return <SpurenFolgen seed={beatId} onDone={onGame} />
     case 'merken':

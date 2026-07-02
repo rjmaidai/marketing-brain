@@ -52,6 +52,8 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
   const inputRef = useRef<number[]>([]) // gesammelte Tipps im aktuellen Versuch
   const attemptRef = useRef(0) // gezählte Fehlversuche
   const doneRef = useRef(false)
+  const mountedRef = useRef(true)
+  useEffect(() => () => void (mountedRef.current = false), [])
   const timers = useRef<number[]>([])
 
   // Standbild des nächsten Beats holen (oder ruhig ohne Bild weitermachen).
@@ -95,22 +97,26 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
     )
   }, [sequence])
 
+  // Die komplette Aufgabe stellen: ERST die Ansage „Merke dir die Reihenfolge"
+  // zu Ende sprechen, DANN die Abfolge zeigen. Wird sowohl am Anfang als auch
+  // nach jedem Fehlversuch benutzt (das Kind bekommt die ganze Aufgabe neu).
+  const presentTask = useCallback(() => {
+    resumeAudio()
+    // Sofort sperren: während die Ansage läuft, darf nichts getippt werden.
+    setShowing(true)
+    inputRef.current = []
+    playSample(spielsatzSrc(SPIELSATZ.merken)).then(() => {
+      if (!mountedRef.current || doneRef.current) return
+      showSequence()
+    })
+  }, [showSequence])
+
   useEffect(() => {
     if (!ready) return
     resumeMic()
-    resumeAudio()
-    let alive = true
-    // ERST die Ansage „Merke dir die Reihenfolge" zu Ende sprechen,
-    // DANN die Abfolge starten — sonst laufen Stimme und Aufleuchten
-    // gleichzeitig und verwirren.
-    playSample(spielsatzSrc(SPIELSATZ.merken)).then(() => {
-      if (alive) showSequence()
-    })
-    return () => {
-      alive = false
-      clearTimers()
-    }
-  }, [ready, showSequence])
+    presentTask()
+    return () => clearTimers()
+  }, [ready, presentTask])
 
   function tap(tile: number) {
     if (showing || doneRef.current) return
@@ -140,8 +146,9 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
       doneRef.current = true
       showFeedback('falsch').then(onDone)
     } else {
-      // Sanftes „nochmal", dann die Reihenfolge noch einmal zeigen.
-      showFeedback('falsch').then(showSequence)
+      // Sanftes „nochmal", dann die KOMPLETTE Aufgabe neu stellen (Ansage +
+      // Reihenfolge) — das Kind soll sie ganz neu gestellt bekommen.
+      showFeedback('falsch').then(presentTask)
     }
   }
 

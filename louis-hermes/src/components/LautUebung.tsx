@@ -42,41 +42,43 @@ export function LautUebung({ laut, onDone }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Karte abspielen (nur beim 1. Versuch die ganze Karte, danach nur noch die Ansage).
+  // Karte abspielen — bei JEDEM Versuch die GANZE Lautkarte inkl. „Hör gut zu".
+  // (Das Kind kann sich den Laut sonst nicht merken; nach „nochmal" braucht es
+  // das komplette Vorbild wieder.)
   useEffect(() => {
     if (phase !== 'card') return
     cardAdvancedRef.current = false
     const v = cardRef.current
-    if (attempt === 1 && v) {
-      // Video jetzt (im Aktivierungsfenster) stumm freischalten, dann ERST
-      // „Hör gut zu" sprechen und danach die Lautkarte (die Mutter) laufen lassen.
-      v.muted = true
-      const pr = v.play()
-      if (pr && typeof pr.then === 'function') {
-        pr.then(() => {
-          v.pause()
-          try {
-            v.currentTime = 0
-          } catch {
-            /* egal */
-          }
-        }).catch(() => {})
-      }
-      playSample(voiceSrc(VOICE.hoerGutZu)).then(() => {
-        if (cardAdvancedRef.current) return
-        const v2 = cardRef.current
-        if (!v2) return
-        v2.muted = false
+    if (!v) {
+      beginListen()
+      return
+    }
+    // Video jetzt (im Aktivierungsfenster) stumm freischalten, dann ERST
+    // „Hör gut zu" sprechen und danach die Lautkarte (die Mutter) laufen lassen.
+    v.muted = true
+    const pr = v.play()
+    if (pr && typeof pr.then === 'function') {
+      pr.then(() => {
+        v.pause()
         try {
-          v2.currentTime = 0
+          v.currentTime = 0
         } catch {
           /* egal */
         }
-        v2.play().catch(() => advanceCard())
-      })
-    } else {
-      beginListen()
+      }).catch(() => {})
     }
+    playSample(voiceSrc(VOICE.hoerGutZu)).then(() => {
+      if (cardAdvancedRef.current) return
+      const v2 = cardRef.current
+      if (!v2) return
+      v2.muted = false
+      try {
+        v2.currentTime = 0
+      } catch {
+        /* egal */
+      }
+      v2.play().catch(() => advanceCard())
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, attempt])
 
@@ -200,9 +202,7 @@ export function LautUebung({ laut, onDone }: Props) {
 
   const title =
     phase === 'card'
-      ? attempt === 1
-        ? 'Hör gut zu …'
-        : 'Nochmal — sag den Laut'
+      ? 'Hör gut zu …'
       : phase === 'listen'
         ? 'Jetzt du!'
         : phase === 'fallback'

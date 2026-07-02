@@ -20,7 +20,10 @@ const REACH = 60 // wie nah der Finger sein muss (grosszügig)
 
 export function SpurenFolgen({ seed, onDone }: Props) {
   const [reached, setReached] = useState(0)
+  const [asked, setAsked] = useState(false) // erst nachziehbar, wenn die Frage gestellt wurde
   const doneRef = useRef(false)
+  const mountedRef = useRef(true)
+  useEffect(() => () => void (mountedRef.current = false), [])
 
   // Sanfte, seed-abhängige Wellenlinie von links nach rechts.
   const pts = useMemo(() => {
@@ -39,7 +42,10 @@ export function SpurenFolgen({ seed, onDone }: Props) {
   useEffect(() => {
     resumeMic()
     resumeAudio()
-    void playSample(spielsatzSrc(SPIELSATZ.spuren))
+    // Erst die Ansage „Folge der Spur", DANN ist die Spur nachziehbar.
+    playSample(spielsatzSrc(SPIELSATZ.spuren)).then(() => {
+      if (mountedRef.current) setAsked(true)
+    })
   }, [])
 
   const pathD = useMemo(
@@ -61,7 +67,7 @@ export function SpurenFolgen({ seed, onDone }: Props) {
   }
 
   function follow(e: React.PointerEvent<SVGSVGElement>) {
-    if (doneRef.current) return
+    if (doneRef.current || !asked) return
     const p = toLocal(e)
     // Nur vorwärts: der am weitesten fortgeschrittene erreichbare Punkt zählt.
     let next = reached
@@ -88,6 +94,7 @@ export function SpurenFolgen({ seed, onDone }: Props) {
         <svg
           className="trace-wrap"
           viewBox={`0 0 ${W} ${H}`}
+          style={{ opacity: asked ? 1 : 0.5, transition: 'opacity 300ms ease' }}
           onPointerDown={(e) => {
             e.currentTarget.setPointerCapture(e.pointerId)
             follow(e)
