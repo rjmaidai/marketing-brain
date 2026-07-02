@@ -83,7 +83,14 @@ export default function App() {
       )}
 
       {screen === 'training' && beat.training && (
-        <Training key={`t-${beat.id}`} beatId={beat.id} training={beat.training} onLaut={afterLaut} onGame={goNextBeat} />
+        <Training
+          key={`t-${beat.id}`}
+          beatId={beat.id}
+          training={beat.training}
+          nextBeatSrc={index < BEATS.length - 1 ? beatSrc(BEATS[index + 1].file) : undefined}
+          onLaut={afterLaut}
+          onGame={goNextBeat}
+        />
       )}
     </>
   )
@@ -92,11 +99,13 @@ export default function App() {
 function Training({
   beatId,
   training,
+  nextBeatSrc,
   onLaut,
   onGame,
 }: {
   beatId: number
   training: NonNullable<(typeof BEATS)[number]['training']>
+  nextBeatSrc?: string
   onLaut: (mastered: boolean) => void
   onGame: () => void
 }) {
@@ -108,7 +117,7 @@ function Training({
     case 'merken':
       return <Merken seed={beatId} onDone={onGame} />
     case 'puzzle':
-      return <BildPuzzle seed={beatId} onDone={onGame} />
+      return <BildPuzzle seed={beatId} nextBeatSrc={nextBeatSrc} onDone={onGame} />
   }
 }
 
