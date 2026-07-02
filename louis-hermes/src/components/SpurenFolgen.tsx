@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { spielsatzSrc, SPIELSATZ } from '../data/story'
 import { resumeMic } from '../lib/mic'
+import { showFeedback } from '../lib/feedback'
 
 // Spiel „Spuren folgen": Louis' Finger zieht Hermès' Fährte nach.
 // Eine ruhige Linie über den Bildschirm. Kein Timer — die Linie wartet.
@@ -73,7 +74,7 @@ export function SpurenFolgen({ seed, onDone }: Props) {
     if (next !== reached) setReached(next)
     if (next >= N - 1) {
       doneRef.current = true
-      window.setTimeout(onDone, 500)
+      showFeedback('richtig').then(onDone)
     }
   }
 

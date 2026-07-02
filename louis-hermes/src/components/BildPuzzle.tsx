@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { spielsatzSrc, SPIELSATZ } from '../data/story'
 import { resumeMic } from '../lib/mic'
 import { capturePoster } from '../lib/poster'
+import { showFeedback } from '../lib/feedback'
 
 // Spiel „Bild-Puzzle": das richtige Teil wird ausgewählt und eingesetzt.
 // Es zeigt das NÄCHSTE Bild der Geschichte mit einer Lücke — das Kind
@@ -75,10 +76,10 @@ export function BildPuzzle({ seed, nextBeatSrc, onDone }: Props) {
     if (i === correctPos) {
       setPlaced(true)
       doneRef.current = true
-      window.setTimeout(onDone, 950)
+      showFeedback('richtig').then(onDone)
     } else {
       setWrong(i)
-      window.setTimeout(() => setWrong(null), 450)
+      showFeedback('falsch').then(() => setWrong(null))
     }
   }
 
@@ -184,10 +185,10 @@ function FarbPuzzle({ seed, onDone }: { seed: number; onDone: () => void }) {
     if (i === correctIdx) {
       setPlaced(true)
       doneRef.current = true
-      window.setTimeout(onDone, 900)
+      showFeedback('richtig').then(onDone)
     } else {
       setWrong(i)
-      window.setTimeout(() => setWrong(null), 450)
+      showFeedback('falsch').then(() => setWrong(null))
     }
   }
 

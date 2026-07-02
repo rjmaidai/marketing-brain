@@ -184,7 +184,7 @@ function Training({
     case 'spuren':
       return <SpurenFolgen seed={beatId} onDone={onGame} />
     case 'merken':
-      return <Merken seed={beatId} onDone={onGame} />
+      return <Merken seed={beatId} nextBeatSrc={nextBeatSrc} onDone={onGame} />
     case 'puzzle':
       return <BildPuzzle seed={beatId} nextBeatSrc={nextBeatSrc} onDone={onGame} />
   }

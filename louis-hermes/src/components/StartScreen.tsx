@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { ensureMic } from '../lib/mic'
+import { resumeTones } from '../lib/tone'
+import { preloadFeedback } from '../lib/feedback'
 
 // Ruhiger Start. Hier wird (einmal) die Mikrofon-Erlaubnis geholt — mit einem
 // Wort für die Bezugsperson, warum. Danach beginnt die Geschichte.
@@ -19,6 +21,8 @@ export function StartScreen({ hasProgress, onStart }: Props) {
     // den Auto-Start mit Ton. Wird das Mikrofon abgelehnt, tippt die
     // Bezugsperson beim Laut einfach weiter.
     void ensureMic()
+    resumeTones() // Kachel-Töne in der Geste freischalten
+    preloadFeedback() // Richtig/Falsch-Bilder vorladen
     onStart(resume)
   }
 
