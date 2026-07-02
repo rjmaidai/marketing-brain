@@ -17,6 +17,8 @@ interface Props {
   onDone: () => void
 }
 
+const MAX_ATTEMPTS = 3 // spätestens danach geht die Geschichte weiter
+
 // 2×2-Raster: ein Feld fehlt, das Kind wählt aus drei Teilen das passende.
 const CELLS = [
   { r: 0, c: 0 },
@@ -36,6 +38,7 @@ export function BildPuzzle({ seed, nextBeatSrc, onDone }: Props) {
   const [placed, setPlaced] = useState(false)
   const [wrong, setWrong] = useState<number | null>(null)
   const doneRef = useRef(false)
+  const wrongRef = useRef(0)
 
   // Standbild aus dem nächsten Beat holen (oder ruhig ohne Bild weitermachen).
   useEffect(() => {
@@ -79,7 +82,14 @@ export function BildPuzzle({ seed, nextBeatSrc, onDone }: Props) {
       showFeedback('richtig').then(onDone)
     } else {
       setWrong(i)
-      showFeedback('falsch').then(() => setWrong(null))
+      wrongRef.current += 1
+      if (wrongRef.current >= MAX_ATTEMPTS) {
+        // Nach 3 Fehlversuchen geht die Geschichte ruhig weiter — nie feststecken.
+        doneRef.current = true
+        showFeedback('falsch').then(onDone)
+      } else {
+        showFeedback('falsch').then(() => setWrong(null))
+      }
     }
   }
 
@@ -170,6 +180,7 @@ function FarbPuzzle({ seed, onDone }: { seed: number; onDone: () => void }) {
   const [placed, setPlaced] = useState(false)
   const [wrong, setWrong] = useState<number | null>(null)
   const doneRef = useRef(false)
+  const wrongRef = useRef(0)
 
   const { gapBand, options, correctIdx } = useMemo(() => {
     const gap = seed % BANDS.length
@@ -188,7 +199,14 @@ function FarbPuzzle({ seed, onDone }: { seed: number; onDone: () => void }) {
       showFeedback('richtig').then(onDone)
     } else {
       setWrong(i)
-      showFeedback('falsch').then(() => setWrong(null))
+      wrongRef.current += 1
+      if (wrongRef.current >= MAX_ATTEMPTS) {
+        // Nach 3 Fehlversuchen geht die Geschichte ruhig weiter — nie feststecken.
+        doneRef.current = true
+        showFeedback('falsch').then(onDone)
+      } else {
+        showFeedback('falsch').then(() => setWrong(null))
+      }
     }
   }
 

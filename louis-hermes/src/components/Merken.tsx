@@ -19,6 +19,7 @@ interface Props {
 const COLS = 3
 const ROWS = 2
 const TILE_COUNT = COLS * ROWS
+const MAX_ATTEMPTS = 3 // spätestens danach geht die Geschichte weiter
 
 // Warme Rückfall-Farben, falls kein Standbild geladen werden kann.
 const FALLBACK = ['#a9c6d8', '#e0a878', '#8aa06a', '#c8794a', '#b98a5e', '#7f9bad']
@@ -48,7 +49,8 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
   const [ready, setReady] = useState(false)
   const [lit, setLit] = useState<number | null>(null)
   const [showing, setShowing] = useState(true)
-  const [inputIdx, setInputIdx] = useState(0)
+  const inputRef = useRef<number[]>([]) // gesammelte Tipps im aktuellen Versuch
+  const attemptRef = useRef(0) // gezählte Fehlversuche
   const doneRef = useRef(false)
   const timers = useRef<number[]>([])
 
@@ -76,7 +78,7 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
 
   const showSequence = useCallback(() => {
     setShowing(true)
-    setInputIdx(0)
+    inputRef.current = []
     clearTimers()
     // Ruhig nacheinander aufleuchten lassen — mit dem eigenen Ton jeder Kachel.
     sequence.forEach((tile, i) => {
@@ -117,16 +119,28 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
     playTone(tile)
     window.setTimeout(() => setLit(null), 220)
 
-    if (tile === sequence[inputIdx]) {
-      const next = inputIdx + 1
-      if (next >= sequence.length) {
-        doneRef.current = true
-        showFeedback('richtig').then(onDone)
-      } else {
-        setInputIdx(next)
-      }
+    // Das Kind darf IMMER die volle Reihe (3 Kacheln) tippen — auch wenn schon
+    // die erste falsch ist. Erst danach wird der Versuch gewertet.
+    inputRef.current.push(tile)
+    if (inputRef.current.length < sequence.length) return
+
+    const taps = inputRef.current
+    inputRef.current = []
+    const correct = taps.every((t, i) => t === sequence[i])
+
+    if (correct) {
+      doneRef.current = true
+      showFeedback('richtig').then(onDone)
+      return
+    }
+
+    attemptRef.current += 1
+    if (attemptRef.current >= MAX_ATTEMPTS) {
+      // Nach 3 Fehlversuchen geht die Geschichte ruhig weiter — nie feststecken.
+      doneRef.current = true
+      showFeedback('falsch').then(onDone)
     } else {
-      // Sanft: kurzes „nochmal", dann die Reihenfolge ruhig noch einmal zeigen.
+      // Sanftes „nochmal", dann die Reihenfolge noch einmal zeigen.
       showFeedback('falsch').then(showSequence)
     }
   }
