@@ -12,11 +12,13 @@ interface Props {
 export function StartScreen({ hasProgress, onStart }: Props) {
   const [preparing, setPreparing] = useState(false)
 
-  async function begin(resume: boolean) {
+  function begin(resume: boolean) {
     setPreparing(true)
-    // Mikrofon jetzt anfragen (Nutzer-Geste vorhanden). Wird es abgelehnt,
-    // läuft die App trotzdem — dann tippt die Bezugsperson beim Laut weiter.
-    await ensureMic()
+    // Mikrofon-Erlaubnis anfragen (Fingergeste vorhanden) — aber NICHT warten:
+    // die Geschichte muss noch in derselben Geste starten, sonst blockiert iPad
+    // den Auto-Start mit Ton. Wird das Mikrofon abgelehnt, tippt die
+    // Bezugsperson beim Laut einfach weiter.
+    void ensureMic()
     onStart(resume)
   }
 

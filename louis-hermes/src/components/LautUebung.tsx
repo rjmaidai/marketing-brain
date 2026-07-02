@@ -165,7 +165,7 @@ export function LautUebung({ laut, onDone }: Props) {
         <div className="training-title">{title}</div>
 
         {phase === 'card' && attempt === 1 ? (
-          <div className="media-frame" style={{ maxHeight: '60vh' }}>
+          <div className="media-frame laut-card">
             <video
               ref={cardRef}
               src={lautkarteSrc(laut)}

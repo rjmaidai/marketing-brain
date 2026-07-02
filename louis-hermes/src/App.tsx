@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { BEATS, beatSrc } from './data/story'
 import { loadProgress, saveProgress, resetProgress } from './lib/progress'
-import { BeatPlayer } from './components/BeatPlayer'
 import { LautUebung } from './components/LautUebung'
 import { SpurenFolgen } from './components/SpurenFolgen'
 import { Merken } from './components/Merken'
@@ -13,7 +12,13 @@ type Screen = 'start' | 'beat' | 'training'
 export default function App() {
   const [screen, setScreen] = useState<Screen>('start')
   const [index, setIndex] = useState(0) // Index in BEATS
+  const [ended, setEnded] = useState(false)
   const [mastered, setMastered] = useState<string[]>(() => loadProgress().mastered)
+
+  // EIN durchgehendes Video-Element für ALLE Beats. Es wird beim Start (echte
+  // Fingergeste) einmal „freigeschaltet" — danach lässt iPad/Safari jeden
+  // weiteren Beat automatisch mit Ton starten, ohne dass man tippen muss.
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   const beat = BEATS[index]
   const isLast = index === BEATS.length - 1
@@ -25,16 +30,53 @@ export default function App() {
     saveProgress({ furthest: Math.max(prev.furthest, index), mastered })
   }, [index, screen, mastered])
 
+  function playBeat(i: number) {
+    const v = videoRef.current
+    if (!v) return
+    setEnded(false)
+    if (v.getAttribute('src') !== beatSrc(BEATS[i].file)) {
+      v.src = beatSrc(BEATS[i].file)
+    }
+    try {
+      v.currentTime = 0
+    } catch {
+      /* egal */
+    }
+    const p = v.play()
+    if (p && typeof p.catch === 'function') {
+      // Sollte es doch einmal blockiert werden: Bild steht, Tipp spielt ab.
+      p.catch(() => setEnded(true))
+    }
+  }
+
+  function replayBeat() {
+    const v = videoRef.current
+    if (!v) return
+    setEnded(false)
+    try {
+      v.currentTime = 0
+    } catch {
+      /* egal */
+    }
+    v.play().catch(() => setEnded(true))
+  }
+
   function start(resume: boolean) {
-    if (resume) {
-      const p = loadProgress()
-      setIndex(Math.min(p.furthest, BEATS.length - 1))
-    } else {
+    const startIdx = resume ? Math.min(loadProgress().furthest, BEATS.length - 1) : 0
+    if (!resume) {
       resetProgress()
       setMastered([])
-      setIndex(0)
     }
+    setIndex(startIdx)
     setScreen('beat')
+    // WICHTIG: direkt in der Fingergeste abspielen — das schaltet das Element frei.
+    playBeat(startIdx)
+  }
+
+  function goToBeat(i: number) {
+    setIndex(i)
+    setScreen('beat')
+    playBeat(i)
   }
 
   function afterBeat() {
@@ -43,17 +85,17 @@ export default function App() {
   }
 
   function goNextBeat() {
-    if (index < BEATS.length - 1) {
-      setIndex(index + 1)
-      setScreen('beat')
-    }
+    if (index < BEATS.length - 1) goToBeat(index + 1)
   }
 
   function restart() {
     resetProgress()
     setMastered([])
     setIndex(0)
+    setEnded(false)
     setScreen('start')
+    const v = videoRef.current
+    if (v) v.pause()
   }
 
   function afterLaut(didMaster: boolean) {
@@ -64,22 +106,39 @@ export default function App() {
     goNextBeat()
   }
 
-  if (screen === 'start') {
-    return <StartScreen hasProgress={loadProgress().furthest > 0} onStart={start} />
-  }
-
   return (
     <>
-      <ProgressThread index={index} total={BEATS.length} />
+      {screen !== 'start' && <ProgressThread index={index} total={BEATS.length} />}
 
-      {screen === 'beat' && (
-        <BeatPlayer
-          key={beat.id}
-          src={beatSrc(beat.file)}
-          onDone={afterBeat}
-          isLast={isLast}
-          onRestart={restart}
-        />
+      {/* Basis-Ebene: das durchgehende Beat-Video. Immer im DOM, damit es
+          freigeschaltet bleibt. Trainings und Startbild liegen als Ebene darüber. */}
+      <div className="stage">
+        <div className="media-frame" onClick={() => ended && replayBeat()}>
+          <video
+            ref={videoRef}
+            playsInline
+            preload="auto"
+            onEnded={() => setEnded(true)}
+          />
+        </div>
+        {screen === 'beat' && ended && (
+          <div className="tap-hint">
+            <button
+              className="pulse-dot"
+              aria-label={isLast ? 'Von vorne beginnen' : 'Weiter'}
+              onClick={(e) => {
+                e.stopPropagation()
+                if (isLast) restart()
+                else afterBeat()
+              }}
+            />
+            <span className="tap-label">{isLast ? 'Nochmal von vorn' : 'Weiter'}</span>
+          </div>
+        )}
+      </div>
+
+      {screen === 'start' && (
+        <StartScreen hasProgress={loadProgress().furthest > 0} onStart={start} />
       )}
 
       {screen === 'training' && beat.training && (
