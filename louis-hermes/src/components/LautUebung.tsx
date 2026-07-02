@@ -19,6 +19,8 @@ type Phase = 'card' | 'listen' | 'success' | 'fallback'
 
 const LISTEN_MS = 5200 // wie lange pro Versuch zugehört wird
 const MAX_ATTEMPTS = 3 // danach geht es ruhig weiter
+const MIN_MASK_MS = 2000 // die Eingabemaske „Jetzt du!" steht mindestens so lange
+const POST_INPUT_MS = 1000 // nach erkannter Toneingabe so lange warten, dann Ergebnis
 
 export function LautUebung({ laut, onDone }: Props) {
   const [phase, setPhase] = useState<Phase>('card')
@@ -26,6 +28,7 @@ export function LautUebung({ laut, onDone }: Props) {
   const cardRef = useRef<HTMLVideoElement>(null)
   const orbRef = useRef<HTMLDivElement>(null)
   const rafRef = useRef<number | null>(null)
+  const successTimer = useRef<number | null>(null)
   const doneRef = useRef(false)
   // Damit „Jetzt bist du dran" nicht erst am Videoende kommt: sobald die Mutter
   // den Laut gesprochen hat, schneiden wir den langsamen Schluss ab.
@@ -151,7 +154,13 @@ export function LautUebung({ laut, onDone }: Props) {
           // ~7 Frames (~120ms) klar über der Schwelle = echte Lautäusserung,
           // nicht bloss ein Klick oder Rascheln.
           if (loudFrames >= 7) {
-            succeed()
+            // Nicht sofort zum Ergebnis springen (das kam viel zu schnell):
+            // Eingabemaske mindestens MIN_MASK_MS, und nach der Toneingabe noch
+            // mindestens POST_INPUT_MS ruhig warten, dann erst das Ergebnis.
+            if (rafRef.current) cancelAnimationFrame(rafRef.current)
+            const now = performance.now()
+            const showAt = Math.max(start + MIN_MASK_MS, now + POST_INPUT_MS)
+            successTimer.current = window.setTimeout(succeed, Math.max(0, showAt - now))
             return
           }
         } else {
@@ -169,6 +178,7 @@ export function LautUebung({ laut, onDone }: Props) {
 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      if (successTimer.current) window.clearTimeout(successTimer.current)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
