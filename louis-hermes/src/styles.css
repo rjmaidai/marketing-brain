@@ -57,6 +57,8 @@ body {
   /* Deckender Hintergrund: Start- und Trainings-Ebene liegen ÜBER dem
      durchgehenden Beat-Video und müssen es sauber verdecken. */
   background: var(--bg);
+  /* Notfalls scrollbar, falls grosse Spielteile mal höher als der Schirm sind. */
+  overflow-y: auto;
 }
 
 /* Weiche, langsame Einblendung — nie hart, nie schnell. */

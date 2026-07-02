@@ -187,8 +187,8 @@ export function LautUebung({ laut, onDone }: Props) {
               preload="auto"
               onLoadedMetadata={(e) => {
                 const d = e.currentTarget.duration || 6
-                // kurz nach dem gesprochenen Laut, aber vor dem langsamen Schluss
-                listenAtRef.current = Math.min(4.2, Math.max(3.0, d - 2.2))
+                // Kurz nachdem die Mutter den Laut gesprochen hat (nicht erst am Ende).
+                listenAtRef.current = Math.min(6.2, Math.max(5.0, d - 0.6))
               }}
               onTimeUpdate={(e) => {
                 if (e.currentTarget.currentTime >= listenAtRef.current) advanceCard()
