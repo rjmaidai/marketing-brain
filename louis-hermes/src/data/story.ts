@@ -59,7 +59,6 @@ export const SPIELSATZ: Record<TrainingType, string> = {
 // Zusätzliche Sprach-Ansagen.
 export const VOICE = {
   hoerGutZu: 'hoer_gut_zu.mp3', // vor dem Start der Lautkarte
-  drueckeWeiter: 'druecke_weiter.mp3', // wenn der grosse Weiter-Knopf erscheint
 }
 export const voiceSrc = (file: string) => `${import.meta.env.BASE_URL}assets/voice/${file}`
 
