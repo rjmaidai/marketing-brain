@@ -9,14 +9,15 @@
 // - „überbrückt" den Wechsel: die Ebene deckt noch, WÄHREND der nächste Beat
 //   dahinter schon einblendet — so blitzt nie kurz das alte Training auf.
 
-import { playSample, preloadSamples } from './audio'
+import { playSample, preloadSamples, playChime } from './audio'
 
 type Kind = 'richtig' | 'falsch'
 
 const imgSrc = (k: Kind) => `${import.meta.env.BASE_URL}assets/feedback/${k}.png`
 const audioSrc = (k: Kind) => `${import.meta.env.BASE_URL}assets/feedback/${k}.mp3`
 
-const PRE_MS = 650 // ruhige Pause VOR dem Lob — kein Schockmoment, sanft ankündigen
+// Erst klingt ein weiches Signet (Übergang), DANN blendet das Bild langsam ein.
+const PRE_MS = 900 // ruhige Pause + Klang-Signet VOR dem Lob — kein Schockmoment
 const MIN_MS = 1800 // Mindestdauer, damit nichts nur „aufblitzt"
 const HOLD_MS = 500 // ruhig stehen lassen
 const BRIDGE_MS = 600 // Ebene deckt noch, während der nächste Beat einblendet
@@ -46,7 +47,10 @@ export async function showFeedback(kind: Kind): Promise<void> {
   overlay.appendChild(img)
   document.body.appendChild(overlay)
 
-  // kurze Ruhe, dann langsam einblenden
+  // ERST ein weiches Klang-Signet als Übergang (aufsteigend = Lob, absteigend =
+  // nochmal), DANN — während es ausklingt — langsam das Bild einblenden.
+  // So knallt das „bravo" nicht mehr rein.
+  void playChime(kind === 'richtig' ? 'up' : 'down')
   await delay(PRE_MS)
   await raf()
   overlay.classList.add('show')

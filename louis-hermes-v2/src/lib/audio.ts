@@ -44,6 +44,34 @@ export function playTone(i: number) {
   osc.stop(t + 0.6)
 }
 
+// Weiches Klang-Signet als sanfter Übergang VOR der Rückmeldung — damit das Lob
+// nicht hart „reinknallt". 'up' = freundlich aufsteigend (richtig), 'down' =
+// weich absteigend (nochmal). Das Promise löst auf, wenn das Signet fertig ist.
+export function playChime(kind: 'up' | 'down'): Promise<void> {
+  const c = getCtx()
+  if (!c) return Promise.resolve()
+  if (c.state === 'suspended') c.resume().catch(() => {})
+  const t0 = c.currentTime
+  const notes = kind === 'up' ? [523.25, 659.25, 783.99] : [523.25, 392.0]
+  const step = kind === 'up' ? 0.16 : 0.22
+  notes.forEach((f, i) => {
+    const osc = c.createOscillator()
+    const gain = c.createGain()
+    osc.type = 'sine'
+    osc.frequency.value = f
+    const st = t0 + i * step
+    gain.gain.setValueAtTime(0.0001, st)
+    gain.gain.linearRampToValueAtTime(0.13, st + 0.04)
+    gain.gain.exponentialRampToValueAtTime(0.0001, st + 0.6)
+    osc.connect(gain)
+    gain.connect(c.destination)
+    osc.start(st)
+    osc.stop(st + 0.65)
+  })
+  const durMs = (notes.length * step + 0.45) * 1000
+  return new Promise((r) => window.setTimeout(r, durMs))
+}
+
 // --- Samples (mp3: Ansagen + Rückmelde-Stimmen) ---
 const cache = new Map<string, AudioBuffer | null>()
 

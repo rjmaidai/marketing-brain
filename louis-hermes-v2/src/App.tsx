@@ -185,31 +185,25 @@ export default function App() {
             ref={videoRef}
             playsInline
             preload="auto"
-            onEnded={() => setEnded(true)}
+            onEnded={() => {
+              // Beats sind aneinandergereiht: am Ende eines Beats geht es
+              // AUTOMATISCH weiter (zum Spiel oder direkt zum nächsten Beat).
+              // Nur ganz am Schluss wartet ein „von vorn".
+              if (isLast) setEnded(true)
+              else afterBeat()
+            }}
           />
           {screen === 'beat' && ended && (
-            <>
-              {/* Riesiges Weiter-Ziel ÜBER dem ganzen Beat — kaum zu verfehlen. */}
-              <button
-                className="advance-overlay"
-                aria-label={isLast ? 'Von vorne beginnen' : 'Weiter'}
-                onClick={() => (isLast ? restart() : afterBeat())}
-              >
-                <span className="advance-dot" />
-                <span className="advance-label">{isLast ? 'Nochmal von vorn' : 'Weiter'}</span>
-              </button>
-              {/* Kleiner Knopf für die Bezugsperson: Stimme nochmal hören. */}
-              <button
-                className="replay-corner"
-                aria-label="Nochmal hören"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  replayBeat()
-                }}
-              >
-                ↻
-              </button>
-            </>
+            // Erscheint nur am Ende der Geschichte — oder falls ein Beat mal nicht
+            // von selbst startet (dann tippt man ihn an).
+            <button
+              className="advance-overlay"
+              aria-label={isLast ? 'Von vorne beginnen' : 'Abspielen'}
+              onClick={() => (isLast ? restart() : replayBeat())}
+            >
+              <span className="advance-dot" />
+              <span className="advance-label">{isLast ? 'Nochmal von vorn' : 'Abspielen'}</span>
+            </button>
           )}
         </div>
       </div>
