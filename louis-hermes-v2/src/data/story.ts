@@ -11,7 +11,7 @@ export interface Training {
   /** Nur bei 'puzzle': welches Bild vervollständigt wird. */
   variant?: 'marke' | 'face'
   /** Nur bei 'spuren' (Spürnase): welches Ziel am Ende der Spur wartet. */
-  target?: 'muetze' | 'dieb'
+  target?: 'muetze' | 'dieb' | 'ball'
 }
 
 export interface Beat {
@@ -34,7 +34,7 @@ export const BEATS: Beat[] = [
   { id: 3,  file: 'beat_03.mp4', moment: 'Hermès steht stolz in Uniform. Haustür zum Bauernhof öffnet sich.', training: { type: 'puzzle', variant: 'marke' } },
   { id: 4,  file: 'beat_04.mp4', moment: 'Begegnung mit einem grossen Pferd. Hermès bleibt ruhig.', training: { type: 'laut' } },
   { id: 5,  file: 'beat_05.mp4', moment: 'Louis versteckt den Lieblingsball hinter einem Baum.', training: { type: 'puzzle', variant: 'face' } },
-  { id: 6,  file: 'beat_06.mp4', moment: 'Hermès bringt den Ball stolz zurück.', training: { type: 'laut' } },
+  { id: 6,  file: 'beat_06.mp4', moment: 'Hermès bringt den Ball stolz zurück.', training: { type: 'spuren', target: 'ball' } },
   { id: 8,  file: 'beat_08.mp4', moment: 'Der Wind weht Louis\' Polizeimütze weg.', training: { type: 'spuren', target: 'muetze' } },
   { id: 11, file: 'beat_11.mp4', moment: 'Blick über den Bauernhof. Eine Prüfung fehlt noch.' },
   { id: 14, file: 'beat_14.mp4', moment: 'Hermès entdeckt den kleinen freundlichen Dieb. Er rennt Richtung See.', training: { type: 'laut', laut: 'DIEB' } },
@@ -49,7 +49,7 @@ export const BEATS: Beat[] = [
 // Alle Buchstaben-Lautkarten (der DIEB ist die fixe Story-Karte, separat).
 export const LAUT_POOL = ['A', 'E', 'F', 'I', 'L', 'M', 'O', 'P', 'S', 'U']
 // Beats mit normaler (gemischter) Lautkarte, in Story-Reihenfolge.
-export const LAUT_BEATS = [2, 4, 6, 17]
+export const LAUT_BEATS = [2, 4, 17]
 
 // Bei jedem Durchlauf neu mischen: welche Karte an welchem Laut-Beat kommt.
 // 8 Beats aus 10 Karten -> jeder Durchlauf zeigt eine andere Auswahl, über die

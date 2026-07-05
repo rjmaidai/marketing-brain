@@ -13,7 +13,6 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('start')
   const [index, setIndex] = useState(0) // Index in BEATS
   const [ended, setEnded] = useState(false)
-  const [beatFaded, setBeatFaded] = useState(false) // Bild sichtbar (eingeblendet)?
   const [mastered, setMastered] = useState<string[]>(() => loadProgress().mastered)
   // Lautkarten pro Durchlauf neu gemischt (DIEB bleibt fix, siehe story.ts).
   const [lautMap, setLautMap] = useState<Record<number, string>>(() => makeLautAssignment())
@@ -22,12 +21,6 @@ export default function App() {
   // Fingergeste) einmal „freigeschaltet" — danach lässt iPad/Safari jeden
   // weiteren Beat automatisch mit Ton starten, ohne dass man tippen muss.
   const videoRef = useRef<HTMLVideoElement>(null)
-  const fadeTimer = useRef<number | null>(null)
-
-  // Ruhiges Tempo: langsam ins Bild blenden, dann erst läuft der Beat.
-  const FADE_IN_MS = 900
-  const FADE_OUT_MS = 500
-  const PLAY_DELAY_MS = 1000 // Beat startet erst, wenn das Bild ganz da ist
 
   const beat = BEATS[index]
   const isLast = index === BEATS.length - 1
@@ -39,64 +32,28 @@ export default function App() {
     saveProgress({ furthest: Math.max(prev.furthest, index), mastered })
   }, [index, screen, mastered])
 
-  const clearFade = () => {
-    if (fadeTimer.current) {
-      window.clearTimeout(fadeTimer.current)
-      fadeTimer.current = null
-    }
-  }
-
-  // Beat laden, langsam ins Bild blenden — und ERST wenn das Bild ganz da ist,
-  // startet der Beat mit dem Voiceover. Ruhe zwischen den Teilen der Geschichte.
-  function loadAndFadeInBeat(i: number, unlock: boolean) {
+  // Hard Cut: Beat sofort laden und abspielen — KEINE Blende zwischen Beats.
+  // Das Video-Element ist durchgehend und beim Start (Fingergeste) freigeschaltet.
+  function playBeat(i: number) {
     const v = videoRef.current
     if (!v) return
-    clearFade()
     setEnded(false)
-    setBeatFaded(false) // unsichtbar starten -> dann einblenden
     if (v.getAttribute('src') !== beatSrc(BEATS[i].file)) {
       v.src = beatSrc(BEATS[i].file)
     }
+    v.muted = false
     try {
       v.currentTime = 0
     } catch {
       /* egal */
     }
-    v.pause() // Bild steht still (Frame 0), noch KEIN Voiceover
-
-    if (unlock) {
-      // In der Fingergeste einmal freischalten: kurz stumm anspielen und stoppen.
-      v.muted = true
-      const p = v.play()
-      if (p && typeof p.then === 'function') {
-        p.then(() => {
-          v.pause()
-          try {
-            v.currentTime = 0
-          } catch {
-            /* egal */
-          }
-          v.muted = false
-        }).catch(() => {
-          v.muted = false
-        })
-      }
-    }
-
-    // langsam einblenden ...
-    requestAnimationFrame(() => setBeatFaded(true))
-    // ... und erst nach dem Fade den Beat laufen lassen.
-    fadeTimer.current = window.setTimeout(() => {
-      v.muted = false
-      const pl = v.play()
-      if (pl && typeof pl.catch === 'function') pl.catch(() => setEnded(true))
-    }, PLAY_DELAY_MS)
+    const p = v.play()
+    if (p && typeof p.catch === 'function') p.catch(() => setEnded(true))
   }
 
   function replayBeat() {
     const v = videoRef.current
     if (!v) return
-    clearFade()
     setEnded(false)
     v.muted = false
     try {
@@ -116,26 +73,15 @@ export default function App() {
     }
     setIndex(startIdx)
     setScreen('beat')
-    // Freischaltung passiert hier in der Fingergeste; dann blendet der Beat ein.
-    loadAndFadeInBeat(startIdx, true)
+    // Freischaltung + Start in der Fingergeste.
+    playBeat(startIdx)
   }
 
   function goToBeat(i: number) {
-    clearFade()
-    if (screen === 'beat') {
-      // Sichtbarer Beat -> erst ruhig ausblenden, dann den neuen einblenden.
-      setBeatFaded(false)
-      fadeTimer.current = window.setTimeout(() => {
-        setIndex(i)
-        loadAndFadeInBeat(i, false)
-      }, FADE_OUT_MS)
-    } else {
-      // Aus einem Training/Feedback heraus: Training sofort weg, Beat blendet ein
-      // (die Feedback-Ebene deckt den Wechsel, kein Aufblitzen des Trainings).
-      setIndex(i)
-      setScreen('beat')
-      loadAndFadeInBeat(i, false)
-    }
+    // Hard Cut: Training/alter Beat sofort weg, neuer Beat startet direkt.
+    setIndex(i)
+    setScreen('beat')
+    playBeat(i)
   }
 
   function afterBeat() {
@@ -148,12 +94,10 @@ export default function App() {
   }
 
   function restart() {
-    clearFade()
     resetProgress()
     setMastered([])
     setIndex(0)
     setEnded(false)
-    setBeatFaded(false)
     setScreen('start')
     const v = videoRef.current
     if (v) v.pause()
@@ -174,13 +118,7 @@ export default function App() {
       {/* Basis-Ebene: das durchgehende Beat-Video. Immer im DOM, damit es
           freigeschaltet bleibt. Trainings und Startbild liegen als Ebene darüber. */}
       <div className="stage">
-        <div
-          className="media-frame"
-          style={{
-            opacity: beatFaded ? 1 : 0,
-            transition: `opacity ${beatFaded ? FADE_IN_MS : FADE_OUT_MS}ms ease`,
-          }}
-        >
+        <div className="media-frame">
           <video
             ref={videoRef}
             playsInline

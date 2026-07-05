@@ -449,7 +449,7 @@ body {
 /* --- Zieh-Puzzle (v2): Bild mit rundem Loch + zwei Zieh-Teile --- */
 .puzzle-pic {
   position: relative;
-  width: min(74vw, 360px);
+  width: min(92vw, 54vh);
   aspect-ratio: 4 / 3;
   border-radius: 20px;
   overflow: hidden;
@@ -498,7 +498,8 @@ body {
 
 /* Merken — grosse, fast bildfüllende Kacheln des kommenden Story-Bildes (3×2) */
 .mem-grid {
-  width: min(94vw, 560px);
+  width: min(98vw, 96vh);
+  max-height: 74vh;
   aspect-ratio: 4 / 3;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -527,11 +528,12 @@ body {
 
 /* Spuren folgen — Zeichenfläche */
 .trace-wrap {
-  width: min(100%, 96vh);
-  max-width: 720px;
+  width: min(98vw, 96vh);
+  max-height: 80vh;
   aspect-ratio: 4 / 3;
   border-radius: 22px;
-  background: var(--bg-soft);
+  /* warme Wiesen-/Weg-Stimmung als Hintergrund */
+  background: linear-gradient(180deg, #5b7d46 0%, #7e9a53 45%, #c3a878 100%);
   box-shadow: 0 12px 40px var(--shadow);
   touch-action: none;
 }

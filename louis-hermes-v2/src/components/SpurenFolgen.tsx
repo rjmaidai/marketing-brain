@@ -12,7 +12,7 @@ import { Meter } from './Meter'
 
 interface Props {
   seed: number
-  target: 'muetze' | 'dieb'
+  target: 'muetze' | 'dieb' | 'ball'
   onDone: () => void
 }
 
@@ -94,17 +94,19 @@ export function SpurenFolgen({ seed, target, onDone }: Props) {
   }
 
   const head = pts[Math.min(reached, N - 1)]
-  const start = pts[0]
   const goal = pts[N - 1]
-  const targetImg = graphicSrc(target === 'muetze' ? 'muetze.png' : 'dieb.png')
+  const targetFile = target === 'muetze' ? 'muetze.png' : target === 'dieb' ? 'dieb.png' : 'ball.png'
+  const targetImg = graphicSrc(targetFile)
+  const title = target === 'muetze' ? 'Schnüffle zur Mütze' : target === 'dieb' ? 'Der Spur zum Dieb folgen' : 'Schnüffle zum Ball'
+
+  // Pfotenabdrücke entlang der Fährte (alle paar Stützpunkte einer).
+  const pawIdx = pts.map((_, i) => i).filter((i) => i % 6 === 3)
 
   return (
     <div className="stage">
       <Meter progress={reached / (N - 1)} />
       <div className="training fade-in">
-        <div className="training-title">
-          {target === 'muetze' ? 'Schnüffle zur Mütze' : 'Folge der Spur zum Dieb'}
-        </div>
+        <div className="training-title">{title}</div>
         <svg
           className="trace-wrap"
           viewBox={`0 0 ${W} ${H}`}
@@ -115,16 +117,37 @@ export function SpurenFolgen({ seed, target, onDone }: Props) {
           }}
           onPointerMove={follow}
         >
-          {/* Ziel am Ende der Spur (Mütze bzw. Dieb) */}
-          <image href={targetImg} x={goal.x - 60} y={goal.y - 60} width={120} height={120} preserveAspectRatio="xMidYMid meet" />
+          <defs>
+            <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="rgba(255,246,224,0.9)" />
+              <stop offset="100%" stopColor="rgba(224,168,120,0)" />
+            </radialGradient>
+          </defs>
           {/* blasse Fährte */}
-          <path d={pathD} fill="none" stroke="rgba(244,236,224,0.18)" strokeWidth={16} strokeLinecap="round" strokeLinejoin="round" strokeDasharray="2 22" />
-          {/* eingefärbter Teil */}
-          <path d={trailD} fill="none" stroke="var(--accent-soft)" strokeWidth={16} strokeLinecap="round" strokeLinejoin="round" />
-          {/* Startpunkt (Pfote) */}
-          {reached === 0 && <circle cx={start.x} cy={start.y} r={22} fill="var(--accent)" />}
-          {/* aktueller Kopf (die schnüffelnde Nase) */}
-          <circle cx={head.x} cy={head.y} r={20} fill="var(--accent)" />
+          <path d={pathD} fill="none" stroke="rgba(255,255,255,0.16)" strokeWidth={20} strokeLinecap="round" strokeLinejoin="round" />
+          {/* eingefärbter (geschnüffelter) Teil — leuchtet warm */}
+          <path d={trailD} fill="none" stroke="var(--accent-soft)" strokeWidth={20} strokeLinecap="round" strokeLinejoin="round" />
+          {/* Pfotenabdrücke: erledigte leuchten, kommende sind blass */}
+          {pawIdx.map((i) => (
+            <text
+              key={i}
+              x={pts[i].x}
+              y={pts[i].y}
+              fontSize={30}
+              textAnchor="middle"
+              dominantBaseline="central"
+              style={{ opacity: i <= reached ? 1 : 0.32, transition: 'opacity 250ms ease' }}
+            >
+              🐾
+            </text>
+          ))}
+          {/* Ziel am Ende der Spur (Mütze / Dieb / Ball) */}
+          <image href={targetImg} x={goal.x - 66} y={goal.y - 66} width={132} height={132} preserveAspectRatio="xMidYMid meet" />
+          {/* die schnüffelnde Nase (Hermès folgt der Spur) */}
+          <circle cx={head.x} cy={head.y} r={34} fill="url(#glow)" />
+          <text x={head.x} y={head.y} fontSize={40} textAnchor="middle" dominantBaseline="central">
+            🐕
+          </text>
         </svg>
       </div>
       {reached > 0 && !doneRef.current && (
