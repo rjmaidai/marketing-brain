@@ -84,9 +84,10 @@ export function Merken({ seed, nextBeatSrc, imageSrc, onDone }: Props) {
     timers.current = []
   }
 
-  const showSequence = useCallback(() => {
+  // keep = Fortschritt behalten (nur die Abfolge nochmal zeigen, ohne von vorn zu starten).
+  const showSequence = useCallback((keep = false) => {
     setShowing(true)
-    setInputIdx(0)
+    if (!keep) setInputIdx(0)
     clearTimers()
     sequence.forEach((tile, i) => {
       timers.current.push(
@@ -113,6 +114,13 @@ export function Merken({ seed, nextBeatSrc, imageSrc, onDone }: Props) {
     })
   }, [showSequence])
 
+  // Zurück-Knopf / Reminder: Abfolge nochmal zeigen, aber den Fortschritt behalten
+  // (nach einem falschen Tipp kann man dieselbe Kachel nochmals versuchen).
+  const replaySequence = useCallback(() => {
+    if (doneRef.current) return
+    showSequence(true)
+  }, [showSequence])
+
   useEffect(() => {
     if (!ready) return
     resumeMic()
@@ -135,13 +143,14 @@ export function Merken({ seed, nextBeatSrc, imageSrc, onDone }: Props) {
         showFeedback('richtig').then(onDone)
       }
     } else {
-      // Falsch -> Balken steigt NICHT. Versuch zählt.
+      // Falsch -> Balken steigt NICHT, aber der Fortschritt bleibt: nach der
+      // Rückmeldung kann DIESELBE Kachel nochmals versucht werden (kein Neustart).
       attemptRef.current += 1
       if (attemptRef.current >= MAX_ATTEMPTS) {
         doneRef.current = true
         showFeedback('falsch').then(onDone)
       } else {
-        showFeedback('falsch').then(presentTask)
+        void showFeedback('falsch') // inputIdx bleibt -> gleiche Stelle nochmal
       }
     }
   }
@@ -184,9 +193,9 @@ export function Merken({ seed, nextBeatSrc, imageSrc, onDone }: Props) {
           ))}
         </div>
       </div>
-      {!showing && inputIdx > 0 && !doneRef.current && (
-        <button className="back-btn" onClick={presentTask}>
-          ↩ Zurück
+      {!showing && !doneRef.current && (
+        <button className="back-btn" onClick={replaySequence}>
+          ↩ Reihenfolge nochmal zeigen
         </button>
       )}
     </div>

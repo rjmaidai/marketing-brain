@@ -18,9 +18,9 @@ interface Particle {
 }
 
 // Track am Turm (in % der Turmhöhe): unten (Start, ~10) = wenig, oben (100) = geschafft.
-// Kalibriert auf die schlanke, freigestellte Turm-Säule (hau_tower.png).
-const TRACK_BOTTOM = 72
-const TRACK_TOP = 33
+// Kalibriert auf die hundlose Anzeige (hau_gauge.png) — nur Zahlenskala + Pfoten-Sockel.
+const TRACK_BOTTOM = 60.5
+const TRACK_TOP = 5.4
 
 export function Meter({ progress }: { progress: number }) {
   const p = Math.max(0, Math.min(1, progress))
@@ -56,7 +56,7 @@ export function Meter({ progress }: { progress: number }) {
   return (
     <>
       <div className="meter" aria-hidden="true">
-        <img className="meter-tower" src={graphicSrc('hau_tower.png')} alt="" draggable={false} />
+        <img className="meter-tower" src={graphicSrc('hau_gauge.png')} alt="" draggable={false} />
         <div className="meter-puck" style={{ top: `${puckTop}%` }} />
       </div>
       <div className="confetti-layer" aria-hidden="true">
