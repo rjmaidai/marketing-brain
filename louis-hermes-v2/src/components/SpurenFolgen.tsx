@@ -98,7 +98,7 @@ export function SpurenFolgen({ seed, target, onDone }: Props) {
 
   void seed // der Weg ist fest ans Bild gebunden
   const pts = useMemo(() => resample(cfg.wp, N), [cfg])
-  const REACH = cfg.w * 0.13 // grosszügiger Fangradius für Kinderfinger
+  const REACH = cfg.w * 0.085 // enger Fangradius: der Finger MUSS auf dem Weg bleiben
 
   useEffect(() => {
     resumeMic()
@@ -186,8 +186,8 @@ export function SpurenFolgen({ seed, target, onDone }: Props) {
           </defs>
           {/* Landschaft mit dem Weg */}
           <image href={graphicSrc(cfg.bg)} x={0} y={0} width={cfg.w} height={cfg.h} preserveAspectRatio="xMidYMid slice" />
-          {/* blasse Führung: zeigt, wo der Weg langgeht */}
-          <path d={guideD} fill="none" stroke="rgba(255,248,230,0.35)" strokeWidth={12} strokeLinecap="round" strokeLinejoin="round" strokeDasharray="4 34" />
+          {/* fester Weg als sichtbare Führung — HIER entlang, nicht frei ziehen */}
+          <path d={guideD} fill="none" stroke="rgba(255,248,230,0.5)" strokeWidth={16} strokeLinecap="round" strokeLinejoin="round" strokeDasharray="2 26" />
           {/* zurückgelegter Weg leuchtet warm */}
           <path d={trailD} fill="none" stroke="rgba(255,214,150,0.75)" strokeWidth={24} strokeLinecap="round" strokeLinejoin="round" />
           {/* gesuchtes Sujet — nur dieses, am rechten Rand */}

@@ -152,12 +152,12 @@ export function LautUebung({ laut, onDone }: Props) {
         noiseFloor = Math.max(noiseFloor, level)
         if (elapsed > 500) calibrating = false
       } else {
-        const threshold = Math.max(0.05, noiseFloor * 2.6)
+        const threshold = Math.max(0.035, noiseFloor * 2.0)
         if (level > threshold) {
-          loudFrames++
-          // ~7 Frames (~120ms) klar über der Schwelle = echte Lautäusserung,
-          // nicht bloss ein Klick oder Rascheln.
-          if (loudFrames >= 7) {
+          // Kurze, leise Laute (p, t, k, f, s) sind nur ein kurzer Ausschlag —
+          // ein klarer Spitzenwert zählt darum mehr, damit auch „ppp" erkannt wird.
+          loudFrames += level > threshold * 2.2 ? 3 : 2
+          if (loudFrames >= 8) {
             // Nicht sofort zum Ergebnis springen (das kam viel zu schnell):
             // Eingabemaske mindestens MIN_MASK_MS, und nach der Toneingabe noch
             // mindestens POST_INPUT_MS ruhig warten, dann erst das Ergebnis.
@@ -229,40 +229,42 @@ export function LautUebung({ laut, onDone }: Props) {
 
   return (
     <div className="stage stage--laut">
-      {/* Lautkarte im VOLLBILD — das wichtigste Element füllt den ganzen Schirm. */}
-      <div className="laut-fs fade-in">
-        <video
-          ref={cardRef}
-          className="laut-fs-video"
-          src={lautkarteSrc(laut)}
-          playsInline
-          preload="auto"
-          onLoadedMetadata={(e) => {
-            const d = e.currentTarget.duration || 6
-            // Kurz nachdem die Mutter den Laut gesprochen hat (nicht erst am Ende).
-            listenAtRef.current = Math.min(6.2, Math.max(5.0, d - 0.6))
-          }}
-          onTimeUpdate={(e) => {
-            if (e.currentTarget.currentTime >= listenAtRef.current) advanceCard()
-          }}
-          onEnded={() => advanceCard()}
-        />
-        <div className="laut-fs-title">{title}</div>
+      <div className="training fade-in">
+        <div className="training-title">{title}</div>
 
-        {(phase === 'listen' || phase === 'fallback') && (
-          <div className="laut-listen">
-            <div ref={orbRef} className="mic-orb">
-              <MicIcon />
-            </div>
-            {phase === 'fallback' && (
-              // Kein Mikrofon erlaubt: die Bezugsperson gibt mit einem Tipp weiter.
-              <div className="tap-hint" style={{ marginTop: 12 }}>
-                <button className="pulse-dot" aria-label="Weiter" onClick={() => onDone(false)} />
-                <span className="tap-label">Weiter</span>
+        {/* Karte in moderater Grösse auf einem warmen Hintergrund (kein Vollbild). */}
+        <div className="media-frame laut-card">
+          <video
+            ref={cardRef}
+            src={lautkarteSrc(laut)}
+            playsInline
+            preload="auto"
+            onLoadedMetadata={(e) => {
+              const d = e.currentTarget.duration || 6
+              // Kurz nachdem die Mutter den Laut gesprochen hat (nicht erst am Ende).
+              listenAtRef.current = Math.min(6.2, Math.max(5.0, d - 0.6))
+            }}
+            onTimeUpdate={(e) => {
+              if (e.currentTarget.currentTime >= listenAtRef.current) advanceCard()
+            }}
+            onEnded={() => advanceCard()}
+          />
+
+          {(phase === 'listen' || phase === 'fallback') && (
+            <div className="laut-listen">
+              <div ref={orbRef} className="mic-orb">
+                <MicIcon />
               </div>
-            )}
-          </div>
-        )}
+              {phase === 'fallback' && (
+                // Kein Mikrofon erlaubt: die Bezugsperson gibt mit einem Tipp weiter.
+                <div className="tap-hint" style={{ marginTop: 12 }}>
+                  <button className="pulse-dot" aria-label="Weiter" onClick={() => onDone(false)} />
+                  <span className="tap-label">Weiter</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
