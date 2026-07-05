@@ -62,7 +62,7 @@ export function StartScreen({ hasProgress, onStart }: Props) {
 
         {/* Sichtbarer Build-Stempel: zeigt sofort, ob die neueste Version geladen ist. */}
         <p className="subtle" style={{ fontSize: 11, opacity: 0.4, marginTop: 18 }}>
-          Build 20 · Everglow-Musik (lizenziert) · ruhig → fröhlich → drückend · Dieb-Wechsel
+          Build 21 · Hau-den-Lukas ~20% kürzer + Pfeil liegt auf der Skala (Musik-Fix folgt nach Abnahme)
         </p>
       </div>
     </div>

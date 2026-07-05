@@ -417,9 +417,10 @@ body {
 .meter {
   position: fixed;
   left: max(2px, env(safe-area-inset-left));
-  /* Über die GANZE Höhe, stehend am linken Rand. */
-  top: max(4px, env(safe-area-inset-top));
-  bottom: max(4px, env(safe-area-inset-bottom));
+  /* Stehend am linken Rand, vertikal zentriert, ~20% kürzer als früher. */
+  top: 50%;
+  transform: translateY(-50%);
+  height: 80vh;
   z-index: 20;
   pointer-events: none;
   filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.45));
@@ -429,17 +430,17 @@ body {
   width: auto;
   display: block;
 }
-/* Flacher Pfeil, der auf der Skala hochwandert (kein leuchtender Ball). */
+/* Leuchtender Querbalken, der auf der Skala hochwandert. Liegt GENAU auf der
+   Röhre (x 22–78% des Bildes) — nicht seitlich daneben. */
 .meter-arrow {
   position: absolute;
-  right: 6%;
+  left: 22%;
+  width: 56%;
+  height: 7px;
   transform: translateY(-50%);
-  width: 0;
-  height: 0;
-  border-top: 10px solid transparent;
-  border-bottom: 10px solid transparent;
-  border-right: 15px solid #ffd479;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
+  background: #ffd479;
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(255, 212, 121, 0.85), 0 1px 3px rgba(0, 0, 0, 0.55);
   transition: top 550ms cubic-bezier(0.34, 1.2, 0.64, 1);
 }
 

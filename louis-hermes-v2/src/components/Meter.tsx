@@ -17,9 +17,10 @@ interface Particle {
   size: number
 }
 
-// Skala am Turm (in % der Turmhöhe): unten ~10, oben 100.
-const TRACK_BOTTOM = 60.5
-const TRACK_TOP = 5.4
+// Skala auf der Röhre (in % der Turmhöhe). Aus dem Bild abgegriffen: die Röhre
+// reicht von ~8% (oben) bis ~66% (unten), darunter beginnt der Sockel.
+const TRACK_BOTTOM = 66
+const TRACK_TOP = 8
 
 export function Meter({ progress }: { progress: number }) {
   const p = Math.max(0, Math.min(1, progress))
