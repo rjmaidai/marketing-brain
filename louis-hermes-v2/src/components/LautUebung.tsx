@@ -3,6 +3,7 @@ import { lautkarteSrc, spielsatzSrc, voiceSrc, SPIELSATZ, VOICE } from '../data/
 import { ensureMic, resumeMic, currentLevel, micState, stopMic } from '../lib/mic'
 import { showFeedback } from '../lib/feedback'
 import { playSample, resumeAudio } from '../lib/audio'
+import { capturePoster } from '../lib/poster'
 
 // Laut-Übung.
 // Ablauf: Lautkarte spielt (die Mutter spricht den Laut) → „Jetzt bist du dran"
@@ -25,6 +26,7 @@ const POST_INPUT_MS = 1000 // nach erkannter Toneingabe so lange warten, dann Er
 export function LautUebung({ laut, onDone }: Props) {
   const [phase, setPhase] = useState<Phase>('card')
   const [attempt, setAttempt] = useState(1)
+  const [bg, setBg] = useState<string | null>(null) // Standbild für den weichen Hintergrund
   const cardRef = useRef<HTMLVideoElement>(null)
   const orbRef = useRef<HTMLDivElement>(null)
   const rafRef = useRef<number | null>(null)
@@ -47,6 +49,17 @@ export function LautUebung({ laut, onDone }: Props) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Ein Standbild der Karte holen -> als weichgezeichneter Hintergrund (KEIN Video).
+  useEffect(() => {
+    let alive = true
+    capturePoster(lautkarteSrc(laut)).then((data) => {
+      if (alive && data) setBg(data)
+    })
+    return () => {
+      alive = false
+    }
+  }, [laut])
 
   // Karte abspielen — bei JEDEM Versuch die GANZE Lautkarte inkl. „Hör gut zu".
   // (Das Kind kann sich den Laut sonst nicht merken; nach „nochmal" braucht es
@@ -232,14 +245,10 @@ export function LautUebung({ laut, onDone }: Props) {
       {/* Das Kartenbild bildfüllend, stark weichgezeichnet + abgedunkelt als
           Hintergrund — so füllt das Blau der Karte den Schirm und die scharfe
           Karte poppt davor hervor. */}
-      <video
+      <div
         className="laut-backdrop"
-        src={lautkarteSrc(laut)}
-        muted
-        autoPlay
-        loop
-        playsInline
         aria-hidden="true"
+        style={bg ? { backgroundImage: `url(${bg})` } : undefined}
       />
       <div className="training laut-content fade-in">
         <div className="training-title">{title}</div>

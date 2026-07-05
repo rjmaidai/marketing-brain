@@ -62,7 +62,7 @@ export function StartScreen({ hasProgress, onStart }: Props) {
 
         {/* Sichtbarer Build-Stempel: zeigt sofort, ob die neueste Version geladen ist. */}
         <p className="subtle" style={{ fontSize: 11, opacity: 0.4, marginTop: 18 }}>
-          Build 17 · Lautkarte: blauer Weichzeichner-Hintergrund · (Musik folgt nach Abnahme)
+          Build 18 · Lautkarte: Standbild-Hintergrund (kein 2. Video), Karte spielt wieder
         </p>
       </div>
     </div>

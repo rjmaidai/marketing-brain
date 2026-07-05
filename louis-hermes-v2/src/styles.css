@@ -112,11 +112,11 @@ body {
 .laut-backdrop {
   position: fixed;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  background-color: #0e1b30; /* blaue Fallback-Farbe, bis das Standbild da ist */
+  background-size: cover;
+  background-position: center;
   transform: scale(1.2); /* weiche Ränder ausserhalb des Bildes verstecken */
-  filter: blur(48px) brightness(0.55) saturate(1.3);
+  filter: blur(46px) brightness(0.6) saturate(1.3);
   z-index: 0;
   pointer-events: none;
 }
