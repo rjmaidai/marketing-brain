@@ -59,6 +59,11 @@ export function StartScreen({ hasProgress, onStart }: Props) {
           Für die Laut-Übung fragt der Browser nach dem Mikrofon. Es wird nichts
           aufgenommen oder gespeichert — die App hört nur kurz zu, ob dein Kind spricht.
         </p>
+
+        {/* Sichtbarer Build-Stempel: zeigt sofort, ob die neueste Version geladen ist. */}
+        <p className="subtle" style={{ fontSize: 11, opacity: 0.4, marginTop: 18 }}>
+          Build 14 · Vollbild-Lautkarte · Mikro/Sound-Fix · Meter klein · warme Musik
+        </p>
       </div>
     </div>
   )
