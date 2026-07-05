@@ -3,6 +3,7 @@ import { graphicSrc, spielsatzSrc, SPIELSATZ } from '../data/story'
 import { resumeMic } from '../lib/mic'
 import { showFeedback } from '../lib/feedback'
 import { playSample, resumeAudio } from '../lib/audio'
+import { Meter } from './Meter'
 
 // Spiel „Bild-Puzzle" — VERSION 2, viel einfacher:
 // Ein Bild (Polizeimarke ODER Hermès-Gesicht) hat ein rundes Loch. Unten liegen
@@ -24,6 +25,7 @@ export function BildPuzzle({ seed, variant, onDone }: Props) {
 
   const [asked, setAsked] = useState(false)
   const [placed, setPlaced] = useState(false)
+  const [progress, setProgress] = useState(0)
   const [drag, setDrag] = useState<{ side: number; x: number; y: number } | null>(null)
   const doneRef = useRef(false)
   const wrongRef = useRef(0)
@@ -75,6 +77,7 @@ export function BildPuzzle({ seed, variant, onDone }: Props) {
     if (side === correctSide) {
       setPlaced(true)
       doneRef.current = true
+      setProgress(1) // Balken voll -> Konfetti-Ausbruch
       showFeedback('richtig').then(onDone)
     } else {
       // Falsches Teil auf die Form gezogen -> passt nicht.
@@ -104,6 +107,7 @@ export function BildPuzzle({ seed, variant, onDone }: Props) {
 
   return (
     <div className="stage" onPointerMove={onPointerMove} onPointerUp={onPointerUp}>
+      <Meter progress={progress} />
       <div className="training fade-in">
         <div className="training-title">{placed ? 'Geschafft!' : 'Zieh das richtige Teil hin'}</div>
 
@@ -131,6 +135,11 @@ export function BildPuzzle({ seed, variant, onDone }: Props) {
           </div>
         )}
       </div>
+      {asked && !placed && (
+        <button className="back-btn" onClick={askTask}>
+          ↩ Nochmal
+        </button>
+      )}
     </div>
   )
 }

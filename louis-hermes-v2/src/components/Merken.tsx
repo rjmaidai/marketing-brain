@@ -4,11 +4,13 @@ import { resumeMic } from '../lib/mic'
 import { capturePoster } from '../lib/poster'
 import { playTone, resumeAudio, playSample } from '../lib/audio'
 import { showFeedback } from '../lib/feedback'
+import { Meter } from './Meter'
 
-// Spiel „Merken": eine kurze Reihenfolge leuchtet auf, dann tippt das Kind sie nach.
-// Die sechs Kacheln sind Ausschnitte des NÄCHSTEN Story-Bildes (3×2), fast
-// bildfüllend — so sieht das Kind schon, was kommt, und ist motiviert.
-// Kein Zeitdruck; bei einem Fehler zeigt es die Reihenfolge ruhig noch einmal.
+// Spiel „Reihenfolge / Merken" — VERSION 2, spannender:
+// Eine kurze Reihenfolge leuchtet auf, dann tippt das Kind sie nach. JEDE
+// richtige Kachel lässt den „Hau den Lukas"-Balken steigen und Konfetti springen
+// (je weiter, desto mehr). Ein Fehler lässt den Balken NICHT steigen — es gibt
+// einen Zurück-Knopf. Nach 3 Fehlversuchen geht die Geschichte ruhig weiter.
 
 interface Props {
   seed: number
@@ -19,13 +21,11 @@ interface Props {
 const COLS = 3
 const ROWS = 2
 const TILE_COUNT = COLS * ROWS
-const MAX_ATTEMPTS = 3 // spätestens danach geht die Geschichte weiter
+const MAX_ATTEMPTS = 3
 
-// Warme Rückfall-Farben, falls kein Standbild geladen werden kann.
 const FALLBACK = ['#a9c6d8', '#e0a878', '#8aa06a', '#c8794a', '#b98a5e', '#7f9bad']
 
 function makeSequence(seed: number, len: number): number[] {
-  // Deterministisch aus dem Seed — ruhig reproduzierbar, keine Zufallsquelle.
   const seq: number[] = []
   let s = seed * 2654435761
   for (let i = 0; i < len; i++) {
@@ -36,7 +36,6 @@ function makeSequence(seed: number, len: number): number[] {
   return seq
 }
 
-// Position des Ausschnitts i (0..5) im 3×2-Raster für background-position.
 function tilePos(i: number) {
   const col = i % COLS
   const row = Math.floor(i / COLS)
@@ -49,14 +48,13 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
   const [ready, setReady] = useState(false)
   const [lit, setLit] = useState<number | null>(null)
   const [showing, setShowing] = useState(true)
-  const inputRef = useRef<number[]>([]) // gesammelte Tipps im aktuellen Versuch
-  const attemptRef = useRef(0) // gezählte Fehlversuche
+  const [inputIdx, setInputIdx] = useState(0) // wie viele richtig nachgetippt
+  const attemptRef = useRef(0)
   const doneRef = useRef(false)
   const mountedRef = useRef(true)
   useEffect(() => () => void (mountedRef.current = false), [])
   const timers = useRef<number[]>([])
 
-  // Standbild des nächsten Beats holen (oder ruhig ohne Bild weitermachen).
   useEffect(() => {
     let alive = true
     if (!nextBeatSrc) {
@@ -80,9 +78,8 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
 
   const showSequence = useCallback(() => {
     setShowing(true)
-    inputRef.current = []
+    setInputIdx(0)
     clearTimers()
-    // Ruhig nacheinander aufleuchten lassen — mit dem eigenen Ton jeder Kachel.
     sequence.forEach((tile, i) => {
       timers.current.push(
         window.setTimeout(() => {
@@ -97,14 +94,11 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
     )
   }, [sequence])
 
-  // Die komplette Aufgabe stellen: ERST die Ansage „Merke dir die Reihenfolge"
-  // zu Ende sprechen, DANN die Abfolge zeigen. Wird sowohl am Anfang als auch
-  // nach jedem Fehlversuch benutzt (das Kind bekommt die ganze Aufgabe neu).
+  // Ganze Aufgabe neu stellen: Ansage zu Ende, dann Abfolge zeigen.
   const presentTask = useCallback(() => {
     resumeAudio()
-    // Sofort sperren: während die Ansage läuft, darf nichts getippt werden.
     setShowing(true)
-    inputRef.current = []
+    setInputIdx(0)
     playSample(spielsatzSrc(SPIELSATZ.merken)).then(() => {
       if (!mountedRef.current || doneRef.current) return
       showSequence()
@@ -120,35 +114,27 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
 
   function tap(tile: number) {
     if (showing || doneRef.current) return
-    // Kurz aufleuchten + eigener Ton als ruhiges Echo.
     setLit(tile)
-    playTone(tile)
     window.setTimeout(() => setLit(null), 220)
 
-    // Das Kind darf IMMER die volle Reihe (3 Kacheln) tippen — auch wenn schon
-    // die erste falsch ist. Erst danach wird der Versuch gewertet.
-    inputRef.current.push(tile)
-    if (inputRef.current.length < sequence.length) return
-
-    const taps = inputRef.current
-    inputRef.current = []
-    const correct = taps.every((t, i) => t === sequence[i])
-
-    if (correct) {
-      doneRef.current = true
-      showFeedback('richtig').then(onDone)
-      return
-    }
-
-    attemptRef.current += 1
-    if (attemptRef.current >= MAX_ATTEMPTS) {
-      // Nach 3 Fehlversuchen geht die Geschichte ruhig weiter — nie feststecken.
-      doneRef.current = true
-      showFeedback('falsch').then(onDone)
+    if (tile === sequence[inputIdx]) {
+      // Richtig -> Balken steigt (Konfetti), aufsteigender Ton.
+      const next = inputIdx + 1
+      playTone(Math.min(5, next + 1))
+      setInputIdx(next)
+      if (next >= sequence.length) {
+        doneRef.current = true
+        showFeedback('richtig').then(onDone)
+      }
     } else {
-      // Sanftes „nochmal", dann die KOMPLETTE Aufgabe neu stellen (Ansage +
-      // Reihenfolge) — das Kind soll sie ganz neu gestellt bekommen.
-      showFeedback('falsch').then(presentTask)
+      // Falsch -> Balken steigt NICHT. Versuch zählt.
+      attemptRef.current += 1
+      if (attemptRef.current >= MAX_ATTEMPTS) {
+        doneRef.current = true
+        showFeedback('falsch').then(onDone)
+      } else {
+        showFeedback('falsch').then(presentTask)
+      }
     }
   }
 
@@ -165,6 +151,7 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
 
   return (
     <div className="stage">
+      <Meter progress={inputIdx / sequence.length} />
       <div className="training fade-in">
         <div className="training-title">
           {showing ? 'Merke dir die Reihenfolge' : 'Jetzt du — tippe sie nach'}
@@ -189,6 +176,11 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
           ))}
         </div>
       </div>
+      {!showing && inputIdx > 0 && !doneRef.current && (
+        <button className="back-btn" onClick={presentTask}>
+          ↩ Zurück
+        </button>
+      )}
     </div>
   )
 }

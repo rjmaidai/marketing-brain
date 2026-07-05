@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { spielsatzSrc, SPIELSATZ, graphicSrc } from '../data/story'
 import { resumeMic } from '../lib/mic'
 import { showFeedback } from '../lib/feedback'
-import { playSample, resumeAudio } from '../lib/audio'
+import { playSample, resumeAudio, playTone } from '../lib/audio'
+import { Meter } from './Meter'
 
 // Spiel „Spürnase / Spuren folgen" — VERSION 2:
 // Hermès schnüffelt die Fährte nach. Am ENDE der Spur wartet das Ziel —
@@ -79,7 +80,13 @@ export function SpurenFolgen({ seed, target, onDone }: Props) {
       if (Math.hypot(dx, dy) < REACH) next = i
       else break
     }
-    if (next !== reached) setReached(next)
+    if (next !== reached) {
+      // Sanfter Ton bei jedem Fortschritts-Schritt (klingt „aufsteigend").
+      if (Math.floor(next / 10) > Math.floor(reached / 10)) {
+        playTone(Math.min(5, Math.floor(next / 10)))
+      }
+      setReached(next)
+    }
     if (next >= N - 1) {
       doneRef.current = true
       showFeedback('richtig').then(onDone)
@@ -93,6 +100,7 @@ export function SpurenFolgen({ seed, target, onDone }: Props) {
 
   return (
     <div className="stage">
+      <Meter progress={reached / (N - 1)} />
       <div className="training fade-in">
         <div className="training-title">
           {target === 'muetze' ? 'Schnüffle zur Mütze' : 'Folge der Spur zum Dieb'}
@@ -119,6 +127,11 @@ export function SpurenFolgen({ seed, target, onDone }: Props) {
           <circle cx={head.x} cy={head.y} r={20} fill="var(--accent)" />
         </svg>
       </div>
+      {reached > 0 && !doneRef.current && (
+        <button className="back-btn" onClick={() => setReached(0)}>
+          ↩ Zurück
+        </button>
+      )}
     </div>
   )
 }
