@@ -2,10 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AdvisorOrb, type OrbState } from "@/components/AdvisorOrb";
-import { startHeygenSession, type HeygenSession } from "@/lib/heygen";
+import { startAnamSession, type AnamSession } from "@/lib/anam";
 
 type Status = "cold" | "connecting" | "idle" | "consulting" | "speaking" | "error";
-type Mode = "live" | "fallback";
+type Provider = "anam" | "fallback";
+
+const ANAM_VIDEO_ID = "anam-video";
+const ANAM_AUDIO_ID = "anam-audio";
 
 interface Turn {
   user: string;
@@ -32,7 +35,7 @@ function extractSentences(
 
 export function VideoAdvisor() {
   const [status, setStatus] = useState<Status>("cold");
-  const [mode, setMode] = useState<Mode>("fallback");
+  const [provider, setProvider] = useState<Provider>("fallback");
   const [orbState, setOrbState] = useState<OrbState>("idle");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [currentUser, setCurrentUser] = useState<string>("");
@@ -46,8 +49,8 @@ export function VideoAdvisor() {
   const [profileOpen, setProfileOpen] = useState<boolean>(false);
   const [profileSaved, setProfileSaved] = useState<boolean>(false);
 
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const sessionRef = useRef<HeygenSession | null>(null);
+  const anamRef = useRef<AnamSession | null>(null);
+  const providerRef = useRef<Provider>("fallback");
   const headIdsRef = useRef<string[]>([]);
   const turnsRef = useRef<Turn[]>([]);
   const abortRef = useRef<AbortController | null>(null);
@@ -55,24 +58,34 @@ export function VideoAdvisor() {
   const recognitionRef = useRef<any>(null);
   const ttsActiveRef = useRef<number>(0);
   const companyProfileRef = useRef<string>("");
+  // OpenAI-Stimme verfügbar? null = noch unbekannt, wird beim ersten TTS-Call gesetzt.
+  const openaiVoiceRef = useRef<boolean | null>(null);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     turnsRef.current = turns;
   }, [turns]);
-
+  useEffect(() => {
+    providerRef.current = provider;
+  }, [provider]);
   useEffect(() => {
     companyProfileRef.current = companyProfile;
   }, [companyProfile]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const SR =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+    setMicSupported(!!SR);
+  }, []);
 
   // Firmenprofil / Ideologie aus dem Browser laden.
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
       const saved = window.localStorage.getItem("mb_company_profile");
-      if (saved) {
-        setCompanyProfile(saved);
-        setProfileOpen(saved.trim().length > 0 ? false : false);
-      }
+      if (saved) setCompanyProfile(saved);
     } catch {
       /* localStorage evtl. gesperrt. */
     }
@@ -87,131 +100,188 @@ export function VideoAdvisor() {
     }
   }, [companyProfile]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const SR =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
-    setMicSupported(!!SR);
+  // ---- Sprachausgabe (OpenAI-Stimme, Fallback Browser) ----------------------
+
+  const markSpeaking = useCallback((on: boolean) => {
+    if (on) {
+      ttsActiveRef.current += 1;
+      setOrbState("speaking");
+    } else {
+      ttsActiveRef.current = Math.max(0, ttsActiveRef.current - 1);
+      if (ttsActiveRef.current === 0) setOrbState("idle");
+    }
   }, []);
 
-  // ---- Sprachausgabe --------------------------------------------------------
-
-  const pickGermanVoice = useCallback((): SpeechSynthesisVoice | null => {
-    if (typeof window === "undefined" || !window.speechSynthesis) return null;
+  const browserSpeak = useCallback((text: string) => {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.lang = "de-DE";
     const voices = window.speechSynthesis.getVoices();
-    return (
-      voices.find((v) => v.lang.toLowerCase().startsWith("de")) ??
-      voices[0] ??
-      null
-    );
+    const de = voices.find((v) => v.lang.toLowerCase().startsWith("de"));
+    if (de) utt.voice = de;
+    utt.rate = 1.02;
+    utt.onstart = () => {
+      ttsActiveRef.current += 1;
+      setOrbState("speaking");
+    };
+    utt.onend = () => {
+      ttsActiveRef.current = Math.max(0, ttsActiveRef.current - 1);
+      if (ttsActiveRef.current === 0) setOrbState("idle");
+    };
+    window.speechSynthesis.speak(utt);
   }, []);
 
-  const speakChunk = useCallback(
-    (text: string) => {
+  const playMp3 = useCallback(
+    (buf: ArrayBuffer) =>
+      new Promise<void>((resolve) => {
+        try {
+          const blob = new Blob([buf], { type: "audio/mpeg" });
+          const url = URL.createObjectURL(blob);
+          const audio = new Audio(url);
+          currentAudioRef.current = audio;
+          markSpeaking(true);
+          const done = () => {
+            markSpeaking(false);
+            URL.revokeObjectURL(url);
+            if (currentAudioRef.current === audio) currentAudioRef.current = null;
+            resolve();
+          };
+          audio.onended = done;
+          audio.onerror = done;
+          audio.play().catch(done);
+        } catch {
+          resolve();
+        }
+      }),
+    [markSpeaking],
+  );
+
+  /** Spricht einen Satz: OpenAI-Stimme (Anam-PCM oder Browser-MP3), sonst Browser-TTS. */
+  const doSpeak = useCallback(
+    async (text: string) => {
       const clean = text.trim();
       if (!clean) return;
 
-      if (mode === "live" && sessionRef.current) {
-        const session = sessionRef.current;
-        speakChainRef.current = speakChainRef.current
-          .then(() => session.speak(clean))
-          .catch(() => {
-            /* Einzelner speak-Fehler soll den Fluss nicht abreißen. */
+      const useAnam = providerRef.current === "anam" && !!anamRef.current;
+
+      if (openaiVoiceRef.current !== false) {
+        try {
+          const res = await fetch("/api/tts", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ text: clean, format: useAnam ? "pcm" : "mp3" }),
           });
-        return;
+          const ct = res.headers.get("content-type") ?? "";
+          const isAudio =
+            res.ok &&
+            (ct.startsWith("audio/") || ct === "application/octet-stream");
+
+          if (isAudio) {
+            openaiVoiceRef.current = true;
+            const buf = await res.arrayBuffer();
+            if (useAnam && anamRef.current) {
+              anamRef.current.sendPcm(buf);
+            } else {
+              await playMp3(buf);
+            }
+            return;
+          }
+          // JSON { available:false } o.ä. → OpenAI nicht nutzbar.
+          openaiVoiceRef.current = false;
+        } catch {
+          openaiVoiceRef.current = false;
+        }
       }
 
-      // Fallback: Browser-Sprachsynthese
-      if (typeof window === "undefined" || !window.speechSynthesis) return;
-      const utt = new SpeechSynthesisUtterance(clean);
-      utt.lang = "de-DE";
-      const voice = pickGermanVoice();
-      if (voice) utt.voice = voice;
-      utt.rate = 1.02;
-      utt.pitch = 1;
-      utt.onstart = () => {
-        ttsActiveRef.current += 1;
-        setOrbState("speaking");
-      };
-      utt.onend = () => {
-        ttsActiveRef.current = Math.max(0, ttsActiveRef.current - 1);
-        if (ttsActiveRef.current === 0) setOrbState("idle");
-      };
-      window.speechSynthesis.speak(utt);
+      // Fallback: Browser-Stimme (funktioniert nicht in Anam-Gesicht — dann
+      // spricht der Fallback-Orb).
+      browserSpeak(clean);
     },
-    [mode, pickGermanVoice],
+    [browserSpeak, playMp3],
   );
+
+  const speakChunk = useCallback(
+    (text: string) => {
+      speakChainRef.current = speakChainRef.current
+        .then(() => doSpeak(text))
+        .catch(() => {});
+    },
+    [doSpeak],
+  );
+
+  const endSpokenTurn = useCallback(() => {
+    speakChainRef.current = speakChainRef.current
+      .then(() => {
+        if (providerRef.current === "anam") anamRef.current?.endTurn();
+      })
+      .catch(() => {});
+  }, []);
 
   const stopSpeaking = useCallback(() => {
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
+    if (currentAudioRef.current) {
+      try {
+        currentAudioRef.current.pause();
+      } catch {
+        /* ignore */
+      }
+      currentAudioRef.current = null;
+    }
     ttsActiveRef.current = 0;
-    sessionRef.current?.interrupt();
+    anamRef.current?.interrupt();
+    speakChainRef.current = Promise.resolve();
   }, []);
 
-  // ---- Session-Start (HeyGen live oder Fallback) ---------------------------
+  // ---- Session-Start (Anam live oder Fallback) ------------------------------
 
-  const ensureSession = useCallback(async (): Promise<Mode> => {
-    if (status !== "cold") return mode;
+  const ensureSession = useCallback(async (): Promise<Provider> => {
+    if (status !== "cold") return providerRef.current;
     setStatus("connecting");
     setError(null);
 
     try {
-      const res = await fetch("/api/heygen-token", { method: "POST" });
+      const res = await fetch("/api/anam-token", { method: "POST" });
       const data = (await res.json()) as {
         available?: boolean;
-        token?: string;
-        avatarId?: string | null;
-        voiceId?: string | null;
+        sessionToken?: string;
         reason?: string;
       };
 
-      if (data.available && data.token) {
-        const session = await startHeygenSession({
-          token: data.token,
-          avatarName: data.avatarId ?? undefined,
-          voiceId: data.voiceId ?? undefined,
-          language: "de",
-          onStream: (stream) => {
-            if (videoRef.current) {
-              videoRef.current.srcObject = stream;
-              videoRef.current.play().catch(() => {});
-            }
-          },
-          onTalkingChange: (talking) =>
-            setOrbState(talking ? "speaking" : "idle"),
+      if (data.available && data.sessionToken) {
+        const session = await startAnamSession({
+          sessionToken: data.sessionToken,
+          videoElementId: ANAM_VIDEO_ID,
+          audioElementId: ANAM_AUDIO_ID,
           onDisconnected: () => {
-            setMode("fallback");
+            setProvider("fallback");
             setNotice("Live-Verbindung getrennt — Fallback aktiv.");
           },
         });
-        sessionRef.current = session;
-        setMode("live");
+        anamRef.current = session;
+        setProvider("anam");
         setStatus("idle");
-        return "live";
+        return "anam";
       }
 
-      setMode("fallback");
+      setProvider("fallback");
       setNotice(
-        data.reason?.includes("Kein HEYGEN")
-          ? "Live-Gesicht noch nicht konfiguriert — Berater spricht über die Browser-Stimme. (HEYGEN_API_KEY setzen zum Freischalten.)"
+        data.reason?.includes("Kein ANAM")
+          ? "Live-Gesicht noch nicht konfiguriert — Berater spricht über die Stimme. (ANAM_API_KEY setzen zum Freischalten.)"
           : (data.reason ?? "Live-Gesicht nicht verfügbar — Fallback aktiv."),
       );
       setStatus("idle");
       return "fallback";
-    } catch (err) {
-      setMode("fallback");
-      setNotice(
-        "Live-Gesicht nicht erreichbar — Berater spricht über die Browser-Stimme.",
-      );
+    } catch {
+      setProvider("fallback");
+      setNotice("Live-Gesicht nicht erreichbar — Fallback aktiv.");
       setStatus("idle");
       return "fallback";
     }
-  }, [status, mode]);
+  }, [status]);
 
-  // ---- Diskussion streamen --------------------------------------------------
+  // ---- Beratung streamen ----------------------------------------------------
 
   const runStream = useCallback(
     async (payload: Record<string, unknown>, userText: string) => {
@@ -227,6 +297,7 @@ export function VideoAdvisor() {
 
       let full = "";
       let spokenIndex = 0;
+      let spokeAnything = false;
 
       try {
         const res = await fetch("/api/advise", {
@@ -250,12 +321,16 @@ export function VideoAdvisor() {
 
         const flushSentences = (finalize: boolean) => {
           const { sentences, next } = extractSentences(full, spokenIndex);
-          for (const s of sentences) speakChunk(s);
+          for (const s of sentences) {
+            speakChunk(s);
+            spokeAnything = true;
+          }
           spokenIndex = next;
           if (finalize) {
             const rest = full.slice(spokenIndex).trim();
             if (rest) {
               speakChunk(rest);
+              spokeAnything = true;
               spokenIndex = full.length;
             }
           }
@@ -282,7 +357,6 @@ export function VideoAdvisor() {
               if (typeof data.text === "string") {
                 full += data.text;
                 setCurrentAdvisor(full);
-                if (mode === "live") setOrbState("speaking");
                 flushSentences(false);
               }
             } else if (event === "error") {
@@ -290,34 +364,28 @@ export function VideoAdvisor() {
               setStatus("error");
               setOrbState("idle");
               return;
-            } else if (event === "done") {
-              // wird nach der Schleife final behandelt
             }
           }
         }
 
         flushSentences(true);
+        if (spokeAnything) endSpokenTurn();
 
-        const finishedTurn: Turn = { user: userText, advisor: full.trim() };
-        setTurns((prev) => [...prev, finishedTurn]);
+        setTurns((prev) => [...prev, { user: userText, advisor: full.trim() }]);
         setCurrentUser("");
         setCurrentAdvisor("");
         setStatus("idle");
-        if (mode === "live") {
-          // orbState wird von onTalkingChange gesteuert
-        } else if (ttsActiveRef.current === 0) {
+        if (ttsActiveRef.current === 0 && providerRef.current !== "anam") {
           setOrbState("idle");
         }
       } catch (err: unknown) {
         if ((err as Error).name === "AbortError") return;
-        setError(
-          err instanceof Error ? err.message : "Netzwerkfehler.",
-        );
+        setError(err instanceof Error ? err.message : "Netzwerkfehler.");
         setStatus("error");
         setOrbState("idle");
       }
     },
-    [mode, speakChunk],
+    [speakChunk, endSpokenTurn],
   );
 
   const submit = useCallback(
@@ -330,7 +398,7 @@ export function VideoAdvisor() {
       setInput("");
       stopSpeaking();
 
-      const activeMode = await ensureSession();
+      await ensureSession();
 
       const profile = companyProfileRef.current.trim();
       const isFollowUp = turnsRef.current.length > 0;
@@ -348,7 +416,6 @@ export function VideoAdvisor() {
       } else {
         await runStream({ situation: clean, companyProfile: profile }, clean);
       }
-      void activeMode;
     },
     [ensureSession, runStream, stopSpeaking],
   );
@@ -389,28 +456,23 @@ export function VideoAdvisor() {
     };
     rec.onerror = () => {
       setListening(false);
-      if (orbStateIsPassive()) setOrbState("idle");
+      if (status === "idle" || status === "cold") setOrbState("idle");
     };
     rec.onend = () => {
       setListening(false);
       const said = finalText.trim();
       if (said.length >= 8) {
         void submit(said);
-      } else if (orbStateIsPassive()) {
+      } else if (status === "idle" || status === "cold") {
         setOrbState("idle");
       }
     };
-
-    function orbStateIsPassive() {
-      return status === "idle" || status === "cold";
-    }
 
     try {
       rec.start();
     } catch {
       setListening(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listening, status, stopSpeaking, submit]);
 
   // ---- Cleanup --------------------------------------------------------------
@@ -422,14 +484,14 @@ export function VideoAdvisor() {
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
-      sessionRef.current?.stop();
+      anamRef.current?.stop();
     };
   }, []);
 
   const busy = status === "consulting" || status === "speaking";
   const started = turns.length > 0 || !!currentUser || status !== "cold";
-
   const profileActive = companyProfile.trim().length > 0;
+  const isLive = provider === "anam";
 
   return (
     <div className="w-full">
@@ -495,16 +557,20 @@ export function VideoAdvisor() {
       <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         {/* Video / Avatar */}
         <div className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-surface/40 to-bg shadow-2xl">
+          {/* Anam rendert in diese Elemente. Immer im DOM, damit das SDK
+              andocken kann; sichtbar nur im Live-Modus. */}
           <video
-            ref={videoRef}
+            id={ANAM_VIDEO_ID}
             className={`absolute inset-0 h-full w-full object-cover ${
-              mode === "live" ? "opacity-100" : "opacity-0"
+              isLive ? "opacity-100" : "opacity-0"
             }`}
             playsInline
             autoPlay
-            muted={false}
           />
-          {mode !== "live" && (
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <audio id={ANAM_AUDIO_ID} autoPlay className="hidden" />
+
+          {!isLive && (
             <div className="absolute inset-0">
               <AdvisorOrb state={orbState} />
             </div>
@@ -535,12 +601,12 @@ export function VideoAdvisor() {
                     ? "Hört zu…"
                     : status === "error"
                       ? "Fehler"
-                      : mode === "live"
+                      : isLive
                         ? "Live-Berater"
                         : "Berater bereit"}
           </div>
 
-          {mode === "live" && (
+          {isLive && (
             <div className="absolute right-4 top-4 rounded-full bg-gold/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gold backdrop-blur">
               Live
             </div>

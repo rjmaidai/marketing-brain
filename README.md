@@ -13,8 +13,8 @@ Kein Chatbot. Kein Q&A. Reibung statt Glättung.
 - **`/berater` — Der Video-Berater.** Ein Echtzeit-Videoagent für Firmen mit
   Marketing-Anliegen. Hinter ihm urteilen dieselben 51 Köpfe (intern), er
   spricht aber mit **einer** souveränen Stimme — per Sprache oder Text bedienbar.
-  Live-Gesicht via HeyGen; ohne Key läuft er über einen animierten Avatar +
-  Browser-Stimme.
+  Echtzeit-Gesicht via **Anam**, Stimme via **OpenAI** (gpt-4o-mini-tts); ohne
+  Keys läuft er über einen animierten Avatar + Browser-Stimme.
 
 ### Video-Berater — wie er funktioniert
 
@@ -28,16 +28,27 @@ Kein Chatbot. Kein Q&A. Reibung statt Glättung.
    Kopf-Argumente** zu einem Urteil — zeigt, wo sie konvergieren, benennt den
    echten Trade-off, wo sie sich widersprechen, und bezieht Position. Endet mit
    der einen Frage, die die Firma selbst beantworten muss.
-5. Der Text wird **satzweise** an das Live-Gesicht (HeyGen) bzw. die Browser-
-   Stimme übergeben — der Berater beginnt zu sprechen, sobald der erste Satz steht.
+5. **Stimme (OpenAI):** Jeder fertige Satz wird per `gpt-4o-mini-tts` vertont —
+   der Berater beginnt zu sprechen, sobald der erste Satz steht.
+6. **Gesicht (Anam):** Die OpenAI-Stimme wird als rohes PCM über Anams
+   BYO-Audio-Kanal ins Echtzeit-Gesicht gestreamt, das lippensynchron spricht.
 
 Die 51 Köpfe umfassen auch eine **Schweizer Perspektive** (Marke, Verhaltens-
 ökonomie, Medien-Pionier, St. Galler Leistungs-Konsequenz, Klarheit/Haltung,
 digitale Öffentlichkeit) — als Denk-Werkzeuge, nicht als Biografien.
 
-Live-Gesicht freischalten: `HEYGEN_API_KEY` (optional `HEYGEN_AVATAR_ID`,
-`HEYGEN_VOICE_ID`) in `.env.local` setzen. Der Haupt-Key bleibt server-seitig;
-der Browser erhält nur ein kurzlebiges Session-Token über `/api/heygen-token`.
+**Provider-Kette (jede Stufe degradiert sauber):**
+
+| Ebene | Primär | Fallback |
+|-------|--------|----------|
+| Denken | Claude (Marketing-Hirn, 51 Köpfe + Firmenprofil) | — (Pflicht) |
+| Stimme | OpenAI `gpt-4o-mini-tts` (`OPENAI_API_KEY`) | Browser-Sprachsynthese |
+| Gesicht | Anam Echtzeit-Avatar (`ANAM_API_KEY` + Persona/Avatar) | animierter Orb |
+
+Alle API-Keys bleiben **server-seitig**. Der Browser erhält nur kurzlebige
+Session-Tokens (`/api/anam-token`) bzw. fertiges Audio (`/api/tts`). Ein
+alternativer HeyGen-Avatar liegt weiterhin im Repo (`lib/heygen.ts`,
+`/api/heygen-token`), ist aber nicht der Standard-Provider.
 
 ## Du willst's einfach nur benutzen?
 
