@@ -6,6 +6,30 @@ Frage, die der Nutzer selbst beantworten muss.
 
 Kein Chatbot. Kein Q&A. Reibung statt Glättung.
 
+## Zwei Zugänge
+
+- **`/` — Das Gremium.** 9–12 Köpfe streiten sichtbar und liefern `[ERKENNTNIS]`
+  + `[OFFENE FRAGE]`. Reibung, nicht Konsens.
+- **`/berater` — Der Video-Berater.** Ein Echtzeit-Videoagent für Firmen mit
+  Marketing-Anliegen. Hinter ihm urteilen dieselben 45 Köpfe (intern), er
+  spricht aber mit **einer** souveränen Stimme — per Sprache oder Text bedienbar.
+  Live-Gesicht via HeyGen; ohne Key läuft er über einen animierten Avatar +
+  Browser-Stimme.
+
+### Video-Berater — wie er funktioniert
+
+1. Firma schildert ihr Anliegen (Sprache via Web Speech API oder Text).
+2. **Interne Selektion:** Claude wählt die passenden Köpfe (unsichtbar).
+3. **Souveräne Synthese** (streaming): der Berater spricht EINE klare, sprech-
+   optimierte Empfehlung — benennt die echte Spannung, glättet nicht, und endet
+   mit der einen Frage, die die Firma selbst beantworten muss.
+4. Der Text wird **satzweise** an das Live-Gesicht (HeyGen) bzw. die Browser-
+   Stimme übergeben — der Berater beginnt zu sprechen, sobald der erste Satz steht.
+
+Live-Gesicht freischalten: `HEYGEN_API_KEY` (optional `HEYGEN_AVATAR_ID`,
+`HEYGEN_VOICE_ID`) in `.env.local` setzen. Der Haupt-Key bleibt server-seitig;
+der Browser erhält nur ein kurzlebiges Session-Token über `/api/heygen-token`.
+
 ## Du willst's einfach nur benutzen?
 
 → **[DEPLOY.md](./DEPLOY.md)** — Schritt-für-Schritt-Anleitung zum Live-Stellen via Vercel. Kein Terminal nötig.

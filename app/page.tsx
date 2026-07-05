@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import Link from "next/link";
 import { InputForm } from "@/components/InputForm";
 import { Discussion, type Round, type SelectionView } from "@/components/Discussion";
 import { HeadsSection } from "@/components/HeadsSection";
@@ -164,6 +165,18 @@ export default function Page() {
         <p className="text-muted text-sm max-w-md mx-auto leading-relaxed">
           Gib eine Idee ein. Das Gremium streitet. Du bekommst echte Reibung.
         </p>
+        <div className="mt-6">
+          <Link
+            href="/berater"
+            className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-4 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20"
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-gold" />
+            </span>
+            Neu: Mit dem Video-Berater sprechen →
+          </Link>
+        </div>
       </header>
 
       <InputForm
