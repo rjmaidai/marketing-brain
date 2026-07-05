@@ -23,14 +23,19 @@ Kein Chatbot. Kein Q&A. Reibung statt Glättung.
    Werte und Weltsicht (lokal im Browser gespeichert). Das fließt in Selektion
    und Beratung ein — der Berater gewichtet die Argumente danach, bleibt aber
    ehrlich, wenn die Ideologie mit solidem Marketing kollidiert.
-3. **Interne Selektion:** Claude wählt die passenden Köpfe (unsichtbar).
-4. **Souveräne Synthese** (streaming): der Berater **vereint drei bis fünf
+3. **Dateien analysieren** (optional): Die Firma hängt Dateien an — **PDF**
+   (Studien, Meta-Analysen, Reports; nativ von Claude gelesen inkl. Tabellen),
+   **Bilder** (Charts) oder **Text** (txt/md/csv/json). Der Berater stützt seine
+   Empfehlung konkret auf deren Inhalt. (Grenzen: max. 6 Dateien, ~4 MB gesamt —
+   Vercel-Body-Limit; größere PDFs bitte aufteilen.)
+5. **Interne Selektion:** Claude wählt die passenden Köpfe (unsichtbar).
+6. **Souveräne Synthese** (streaming): der Berater **vereint drei bis fünf
    Kopf-Argumente** zu einem Urteil — zeigt, wo sie konvergieren, benennt den
    echten Trade-off, wo sie sich widersprechen, und bezieht Position. Endet mit
    der einen Frage, die die Firma selbst beantworten muss.
-5. **Stimme (OpenAI):** Jeder fertige Satz wird per `gpt-4o-mini-tts` vertont —
+7. **Stimme (OpenAI):** Jeder fertige Satz wird per `gpt-4o-mini-tts` vertont —
    der Berater beginnt zu sprechen, sobald der erste Satz steht.
-6. **Gesicht (Anam):** Die OpenAI-Stimme wird als rohes PCM über Anams
+8. **Gesicht (Anam):** Die OpenAI-Stimme wird als rohes PCM über Anams
    BYO-Audio-Kanal ins Echtzeit-Gesicht gestreamt, das lippensynchron spricht.
 
 Die 51 Köpfe umfassen auch eine **Schweizer Perspektive** (Marke, Verhaltens-

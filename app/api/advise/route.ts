@@ -12,6 +12,11 @@ import {
 } from "@/lib/advisor-prompt";
 import { getHead } from "@/lib/heads";
 import type { HeadSelection } from "@/lib/types";
+import {
+  parseAttachments,
+  attachmentsToBlocks,
+  type AdvisorAttachment,
+} from "@/lib/attachments";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -77,6 +82,7 @@ export async function POST(req: NextRequest) {
     headIds?: unknown;
     previousTurns?: unknown;
     companyProfile?: unknown;
+    files?: unknown;
   };
   try {
     body = await req.json();
@@ -94,6 +100,14 @@ export async function POST(req: NextRequest) {
     typeof body.companyProfile === "string"
       ? body.companyProfile.trim().slice(0, MAX_COMPANY_PROFILE)
       : "";
+
+  const { files, error: filesError } = parseAttachments(body.files);
+  if (filesError) {
+    return new Response(JSON.stringify({ error: filesError }), {
+      status: 400,
+      headers: { "content-type": "application/json" },
+    });
+  }
 
   if (situation.length < 8) {
     return new Response(
@@ -164,9 +178,14 @@ export async function POST(req: NextRequest) {
         } else {
           send("status", { phase: "consulting" });
 
-          const selectionUserContent = companyProfile
-            ? `${buildSelectionUserMessage(situation)}\n\nKONTEXT DER FIRMA (Positionierung/Ideologie, für die beraten wird):\n${companyProfile}`
-            : buildSelectionUserMessage(situation);
+          const filesNote = files.length
+            ? `\n\nHINWEIS: Die Firma hat ${files.length} Datei(en) angehängt (z.B. Studien/Meta-Analysen), die analysiert werden sollen — wähle auch Köpfe, die Datenlage/Evidenz einordnen.`
+            : "";
+          const selectionUserContent = `${buildSelectionUserMessage(situation)}${
+            companyProfile
+              ? `\n\nKONTEXT DER FIRMA (Positionierung/Ideologie, für die beraten wird):\n${companyProfile}`
+              : ""
+          }${filesNote}`;
 
           let selection: HeadSelection | null = null;
           for (let attempt = 0; attempt < 3 && !selection; attempt++) {
@@ -198,10 +217,8 @@ export async function POST(req: NextRequest) {
 
         send("status", { phase: "speaking" });
 
-        const messages: Array<{
-          role: "user" | "assistant";
-          content: string;
-        }> = [];
+        const hasFiles = files.length > 0;
+        const messages: Anthropic.MessageParam[] = [];
 
         if (isFollowUp) {
           for (let i = 0; i < previousTurns.length; i++) {
@@ -217,18 +234,30 @@ export async function POST(req: NextRequest) {
           }
           messages.push({
             role: "user",
-            content: buildAdvisorFollowUpMessage(followUp),
+            content: buildAdvisorFollowUpMessage(followUp, hasFiles),
           });
         } else {
           messages.push({
             role: "user",
-            content: buildAdvisorUserMessage(situation, gateNote),
+            content: buildAdvisorUserMessage(situation, gateNote, hasFiles),
           });
+        }
+
+        // Anhänge in die AKTUELLE (letzte) Nutzer-Nachricht einbetten:
+        // Dokument-/Bild-/Text-Blöcke zuerst, dann der Anweisungstext.
+        if (hasFiles) {
+          const last = messages[messages.length - 1];
+          const textPart =
+            typeof last.content === "string" ? last.content : "";
+          last.content = [
+            ...attachmentsToBlocks(files as AdvisorAttachment[]),
+            { type: "text", text: textPart },
+          ];
         }
 
         const advisorStream = await client.messages.stream({
           model: MODEL,
-          max_tokens: 1400,
+          max_tokens: hasFiles ? 2400 : 1400,
           temperature: 0.7,
           system: buildAdvisorSystemPrompt(advisorHeadIds, companyProfile),
           messages,

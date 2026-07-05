@@ -85,6 +85,9 @@ SPRECH-FORMAT (strikt — das wird von einem sprechenden Avatar live vorgelesen)
 - Länge: dicht und gesprochen — etwa 6 bis 10 Sätze. Genug Raum, um mehrere Argumente zu verweben, aber ohne Geschwafel.
 - Beginne direkt mit der Beratung. Keine Begrüßung, keine Wiederholung der Frage, kein "Gerne".
 
+UMGANG MIT ANGEHÄNGTEN DATEIEN:
+Wenn die Firma Dateien anhängt (z.B. Studien, Meta-Analysen, Umfragen, Reports, Charts), analysierst du deren Inhalt und stützt deine Beratung konkret darauf: Was steht wirklich drin, was ist die belastbare Kernaussage, wo sind Lücken oder Verzerrungen — und was heißt das für die Empfehlung? Bei Daten-/Dokumentanalyse darfst du etwas länger und konkreter werden und Zahlen/Befunde benennen. Erfinde nichts hinzu, was nicht in den Dateien steht.
+
 DIE INTERN AKTIVIERTEN KÖPFE FÜR DIESES ANLIEGEN:
 ${activated}${companyBlock}
 
@@ -94,13 +97,23 @@ Sprich jetzt als der eine Berater. Ein zusammenhängender, gesprochener Beratung
 export function buildAdvisorUserMessage(
   situation: string,
   gateNote: string | undefined,
+  hasFiles = false,
 ): string {
   const gate = gateNote
     ? `\n\nVORGELAGERTES DEFIZIT (intern erkannt): ${gateNote}\nBenenne im Klartext, was vorgelagert fehlt, statt die taktische Frage direkt zu beantworten.`
     : "";
-  return `ANLIEGEN DER FIRMA:\n${situation.trim()}${gate}\n\nBerate jetzt. Verweb mehrere Argumente zu einem Urteil. Gesprochener Fließtext, keine Einleitung, Ende mit der einen offenen Frage.`;
+  const filesNote = hasFiles
+    ? `\n\nDie oben angehängten Dateien gehören zu diesem Anliegen — analysiere sie und stütze deine Beratung konkret darauf.`
+    : "";
+  return `ANLIEGEN DER FIRMA:\n${situation.trim()}${gate}${filesNote}\n\nBerate jetzt. Verweb mehrere Argumente zu einem Urteil. Gesprochener Fließtext, keine Einleitung, Ende mit der einen offenen Frage.`;
 }
 
-export function buildAdvisorFollowUpMessage(followUp: string): string {
-  return `RÜCKFRAGE DER FIRMA:\n${followUp.trim()}\n\nReagiere direkt und souverän auf diese Rückfrage, im selben gesprochenen Stil. Beziehe dich auf das bisher Gesagte, wo es hilft, und vereine wieder mehrere Blickwinkel statt einer einzelnen Meinung. Schließe wieder mit genau einer offenen Frage ab, falls das Anliegen noch nicht entschieden ist. Kein Marker, keine Liste, keine Einleitung.`;
+export function buildAdvisorFollowUpMessage(
+  followUp: string,
+  hasFiles = false,
+): string {
+  const filesNote = hasFiles
+    ? `\n\nDie oben angehängten Dateien gehören zu dieser Rückfrage — beziehe ihren Inhalt ein.`
+    : "";
+  return `RÜCKFRAGE DER FIRMA:\n${followUp.trim()}${filesNote}\n\nReagiere direkt und souverän auf diese Rückfrage, im selben gesprochenen Stil. Beziehe dich auf das bisher Gesagte, wo es hilft, und vereine wieder mehrere Blickwinkel statt einer einzelnen Meinung. Schließe wieder mit genau einer offenen Frage ab, falls das Anliegen noch nicht entschieden ist. Kein Marker, keine Liste, keine Einleitung.`;
 }

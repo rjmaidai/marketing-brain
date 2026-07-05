@@ -13,6 +13,66 @@ const ANAM_AUDIO_ID = "anam-audio";
 interface Turn {
   user: string;
   advisor: string;
+  files?: string[];
+}
+
+interface Attachment {
+  name: string;
+  kind: "pdf" | "image" | "text";
+  mediaType?: string;
+  data: string; // base64 (pdf/image) oder Text
+  bytes: number;
+}
+
+const MAX_ATTACHMENTS = 6;
+const MAX_FILE_BYTES = 3_500_000; // ~3,5 MB je Datei (Vercel-Body-Limit)
+const MAX_TEXT_BYTES = 500_000;
+const IMAGE_MIME = ["image/png", "image/jpeg", "image/gif", "image/webp"];
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => {
+      const s = String(r.result);
+      resolve(s.slice(s.indexOf(",") + 1));
+    };
+    r.onerror = () => reject(new Error("read"));
+    r.readAsDataURL(file);
+  });
+}
+
+async function readAttachment(
+  file: File,
+): Promise<Attachment | { error: string }> {
+  const name = file.name;
+  const type = file.type;
+  const lower = name.toLowerCase();
+  const isImage = IMAGE_MIME.includes(type);
+  const isPdf = type === "application/pdf" || lower.endsWith(".pdf");
+  const isText =
+    type.startsWith("text/") || /\.(txt|md|csv|json|tsv|log)$/i.test(lower);
+
+  if (isPdf || isImage) {
+    if (file.size > MAX_FILE_BYTES)
+      return { error: `„${name}" ist zu groß (max. ~3,5 MB).` };
+    const data = await fileToBase64(file);
+    return {
+      name,
+      kind: isPdf ? "pdf" : "image",
+      mediaType: isPdf ? "application/pdf" : type,
+      data,
+      bytes: file.size,
+    };
+  }
+  if (isText) {
+    if (file.size > MAX_TEXT_BYTES)
+      return { error: `„${name}" (Text) ist zu groß.` };
+    const data = await file.text();
+    return { name, kind: "text", data, bytes: file.size };
+  }
+  return {
+    error: `„${name}": Typ nicht unterstützt (PDF, Bild, txt/md/csv/json).`,
+  };
 }
 
 /** Zerlegt einen Puffer ab `from` in vollständige Sätze (für satzweise TTS). */
@@ -48,6 +108,10 @@ export function VideoAdvisor() {
   const [companyProfile, setCompanyProfile] = useState<string>("");
   const [profileOpen, setProfileOpen] = useState<boolean>(false);
   const [profileSaved, setProfileSaved] = useState<boolean>(false);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [attachError, setAttachError] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const anamRef = useRef<AnamSession | null>(null);
   const providerRef = useRef<Provider>("fallback");
@@ -99,6 +163,42 @@ export function VideoAdvisor() {
       /* ignorieren */
     }
   }, [companyProfile]);
+
+  const handleFiles = useCallback(async (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+    setAttachError(null);
+    const incoming = Array.from(fileList);
+    const added: Attachment[] = [];
+    let err: string | null = null;
+
+    for (const file of incoming) {
+      const res = await readAttachment(file);
+      if ("error" in res) {
+        err = res.error;
+        continue;
+      }
+      added.push(res);
+    }
+
+    setAttachments((prev) => {
+      const combined = [...prev, ...added];
+      if (combined.length > MAX_ATTACHMENTS) {
+        err = `Maximal ${MAX_ATTACHMENTS} Dateien.`;
+        return combined.slice(0, MAX_ATTACHMENTS);
+      }
+      const total = combined.reduce((s, a) => s + a.data.length, 0);
+      if (total > 4_000_000) {
+        err = "Anhänge zusammen zu groß (max. ~4 MB).";
+        return prev;
+      }
+      return combined;
+    });
+    if (err) setAttachError(err);
+  }, []);
+
+  const removeAttachment = useCallback((i: number) => {
+    setAttachments((prev) => prev.filter((_, idx) => idx !== i));
+  }, []);
 
   // ---- Sprachausgabe (OpenAI-Stimme, Fallback Browser) ----------------------
 
@@ -299,7 +399,11 @@ export function VideoAdvisor() {
   // ---- Beratung streamen ----------------------------------------------------
 
   const runStream = useCallback(
-    async (payload: Record<string, unknown>, userText: string) => {
+    async (
+      payload: Record<string, unknown>,
+      userText: string,
+      fileNames: string[] = [],
+    ) => {
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
@@ -386,7 +490,14 @@ export function VideoAdvisor() {
         flushSentences(true);
         if (spokeAnything) endSpokenTurn();
 
-        setTurns((prev) => [...prev, { user: userText, advisor: full.trim() }]);
+        setTurns((prev) => [
+          ...prev,
+          {
+            user: userText,
+            advisor: full.trim(),
+            files: fileNames.length ? fileNames : undefined,
+          },
+        ]);
         setCurrentUser("");
         setCurrentAdvisor("");
         setStatus("idle");
@@ -406,33 +517,54 @@ export function VideoAdvisor() {
   const submit = useCallback(
     async (text: string) => {
       const clean = text.trim();
-      if (clean.length < 8) {
+      const files = attachments;
+      if (clean.length < 8 && files.length === 0) {
         setError("Bitte schildern Sie Ihr Anliegen in ein paar Sätzen.");
         return;
       }
+      const situationText =
+        clean.length >= 8
+          ? clean
+          : "Bitte analysiere die angehängten Dateien und berate uns dazu.";
+
       setInput("");
+      setAttachments([]);
+      setAttachError(null);
       stopSpeaking();
 
       await ensureSession();
 
       const profile = companyProfileRef.current.trim();
+      const filePayload = files.map((f) => ({
+        name: f.name,
+        kind: f.kind,
+        mediaType: f.mediaType,
+        data: f.data,
+      }));
+      const fileNames = files.map((f) => f.name);
       const isFollowUp = turnsRef.current.length > 0;
       if (isFollowUp) {
         await runStream(
           {
             situation: turnsRef.current[0].user,
-            followUp: clean,
+            followUp: situationText,
             headIds: headIdsRef.current,
             previousTurns: turnsRef.current,
             companyProfile: profile,
+            files: filePayload,
           },
-          clean,
+          situationText,
+          fileNames,
         );
       } else {
-        await runStream({ situation: clean, companyProfile: profile }, clean);
+        await runStream(
+          { situation: situationText, companyProfile: profile, files: filePayload },
+          situationText,
+          fileNames,
+        );
       }
     },
-    [ensureSession, runStream, stopSpeaking],
+    [attachments, ensureSession, runStream, stopSpeaking],
   );
 
   // ---- Mikrofon -------------------------------------------------------------
@@ -637,16 +769,17 @@ export function VideoAdvisor() {
                   Ihr Marketing-Berater
                 </p>
                 <p className="max-w-xs text-sm leading-relaxed text-muted">
-                  Schildern Sie Ihr Anliegen — per Sprache oder Text. Hinter
-                  dem Berater urteilen 51 Marketing-Köpfe. Sie hören eine klare
-                  Empfehlung, nicht zehn Meinungen.
+                  Schildern Sie Ihr Anliegen — per Sprache oder Text, gern mit
+                  Dateien (PDF, Studien, Meta-Analysen). Hinter dem Berater
+                  urteilen 51 Marketing-Köpfe. Sie hören eine klare Empfehlung,
+                  nicht zehn Meinungen.
                 </p>
               </div>
             )}
 
             {turns.map((t, i) => (
               <div key={i} className="space-y-2">
-                <UserLine text={t.user} />
+                <UserLine text={t.user} files={t.files} />
                 <AdvisorLine text={t.advisor} />
               </div>
             ))}
@@ -678,7 +811,50 @@ export function VideoAdvisor() {
             </p>
           )}
 
+          {/* Anhänge */}
+          {(attachments.length > 0 || attachError) && (
+            <div className="mb-2 space-y-1.5">
+              {attachments.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {attachments.map((a, i) => (
+                    <span
+                      key={i}
+                      className="flex items-center gap-1.5 rounded-lg border border-white/15 bg-black/30 px-2.5 py-1.5 text-[12px]"
+                    >
+                      <span aria-hidden>
+                        {a.kind === "pdf" ? "📄" : a.kind === "image" ? "🖼️" : "📝"}
+                      </span>
+                      <span className="max-w-[160px] truncate">{a.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(i)}
+                        aria-label="Anhang entfernen"
+                        className="ml-0.5 text-muted hover:text-ink"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {attachError && (
+                <p className="text-[12px] text-red-300">{attachError}</p>
+              )}
+            </div>
+          )}
+
           {/* Eingabe */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".pdf,image/png,image/jpeg,image/gif,image/webp,.txt,.md,.csv,.json,.tsv,.log,text/*"
+            className="hidden"
+            onChange={(e) => {
+              void handleFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -686,6 +862,15 @@ export function VideoAdvisor() {
             }}
             className="flex items-end gap-2"
           >
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              aria-label="Datei anhängen (PDF, Bild, Text)"
+              title="Datei anhängen — PDF, Bild, Text (z.B. Studien, Meta-Analysen)"
+              className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-xl border border-white/15 bg-black/30 text-ink transition hover:border-gold/50"
+            >
+              <ClipIcon />
+            </button>
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -746,9 +931,21 @@ export function VideoAdvisor() {
   );
 }
 
-function UserLine({ text }: { text: string }) {
+function UserLine({ text, files }: { text: string; files?: string[] }) {
   return (
     <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-surface/60 px-4 py-2.5 text-sm">
+      {files && files.length > 0 && (
+        <div className="mb-1.5 flex flex-wrap gap-1">
+          {files.map((f, i) => (
+            <span
+              key={i}
+              className="inline-flex items-center gap-1 rounded bg-black/30 px-1.5 py-0.5 text-[11px] text-muted"
+            >
+              📎 <span className="max-w-[140px] truncate">{f}</span>
+            </span>
+          ))}
+        </div>
+      )}
       {text}
     </div>
   );
@@ -768,6 +965,23 @@ function AdvisorLine({
       </p>
       <span className={streaming ? "mb-cursor" : ""}>{text}</span>
     </div>
+  );
+}
+
+function ClipIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+    </svg>
   );
 }
 
