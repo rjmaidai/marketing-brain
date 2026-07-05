@@ -69,7 +69,7 @@ body {
 /* Minispiel-Bühne mit kompaktem Fortschrittsturm (Ecke unten links):
    Inhalt etwas nach rechts, damit der Turm nichts verdeckt. */
 .stage--meter {
-  padding-left: calc(12px + min(19vw, 150px));
+  padding-left: calc(12px + min(15vw, 115px));
 }
 
 /* Weiche, langsame Einblendung — nie hart, nie schnell. */
@@ -103,24 +103,38 @@ body {
   display: block;
 }
 
-/* Lautkarten sind 16:9 — eigener Rahmen, und das GANZE Video muss sichtbar sein
-   (contain statt cover), damit nichts abgeschnitten wird. */
-/* Lautkarte ist das WICHTIGSTE Element -> gross & prominent, mit warmem Rahmen. */
-.laut-card {
-  aspect-ratio: 16 / 9;
-  width: min(100%, calc(80vh * 16 / 9));
-  max-width: 100%;
-  max-height: 80vh;
-  background: #0b0b0f;
-  border: 3px solid rgba(255, 214, 150, 0.45);
-  box-shadow: 0 18px 60px var(--shadow), 0 0 0 1px rgba(0, 0, 0, 0.4);
-}
-.laut-card video {
-  object-fit: cover;
-}
-/* Warmer, einladender Hintergrund für die Laut-Übung (nicht kalt/schwarz). */
+/* Lautkarte im VOLLBILD — das wichtigste Element füllt den ganzen Schirm.
+   16:9-Video per 'cover' bildschirmfüllend (Inhalt ist mittig komponiert). */
 .stage--laut {
-  background: radial-gradient(circle at 50% 42%, #3b3025 0%, var(--bg) 68%);
+  padding: 0;
+  background: #000;
+}
+.laut-fs {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.laut-fs-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.laut-fs-title {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+  z-index: 3;
 }
 
 /* --- Grosses Weiter-Ziel ÜBER dem Beat: das ganze Bild ist antippbar --- */
@@ -400,8 +414,8 @@ body {
   position: fixed;
   left: max(2px, env(safe-area-inset-left));
   bottom: max(2px, env(safe-area-inset-bottom));
-  /* Kompakt & stehend in der Ecke — NICHT über die ganze Höhe (sonst abgeschnitten). */
-  height: min(52vh, 400px);
+  /* Klein & stehend in der Ecke (Landscape). */
+  height: min(38vh, 290px);
   z-index: 20;
   pointer-events: none;
   filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.45));

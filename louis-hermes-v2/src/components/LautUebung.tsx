@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { lautkarteSrc, spielsatzSrc, voiceSrc, SPIELSATZ, VOICE } from '../data/story'
-import { ensureMic, resumeMic, currentLevel, micState } from '../lib/mic'
+import { ensureMic, resumeMic, currentLevel, micState, stopMic } from '../lib/mic'
 import { showFeedback } from '../lib/feedback'
 import { playSample, resumeAudio } from '../lib/audio'
 
@@ -41,6 +41,9 @@ export function LautUebung({ laut, onDone }: Props) {
     resumeAudio()
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      // Mikrofon freigeben, wenn die Laut-Übung verlassen wird — sonst bleibt
+      // iOS in „Play-and-Record" und leitet spätere Töne auf den leisen Hörer.
+      stopMic()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -50,6 +53,7 @@ export function LautUebung({ laut, onDone }: Props) {
   // das komplette Vorbild wieder.)
   useEffect(() => {
     if (phase !== 'card') return
+    void ensureMic() // pro Versuch sicherstellen (kann nach stopMic neu nötig sein)
     cardAdvancedRef.current = false
     const v = cardRef.current
     if (!v) {
@@ -188,12 +192,16 @@ export function LautUebung({ laut, onDone }: Props) {
     doneRef.current = true
     if (rafRef.current) cancelAnimationFrame(rafRef.current)
     setPhase('success')
+    stopMic() // Mikro freigeben -> Lautsprecher zurück, damit das Lob hörbar ist
     // Lob (Hermès, Daumen hoch + Stimme), dann ruhig in die Story zurück.
     showFeedback('richtig').then(() => onDone(true))
   }
 
   function noMore() {
     if (doneRef.current) return
+    // Mikro vor der Rückmeldung freigeben, damit die Stimme über den Lautsprecher
+    // kommt; bei einem neuen Versuch wird es in der 'card'-Phase wieder geholt.
+    stopMic()
     if (attempt < MAX_ATTEMPTS) {
       // Sanftes „nochmal" (Hermès zuckt freundlich), dann neuer Versuch —
       // ohne dem Kind zu zeigen, dass es sowieso weitergeht.
@@ -221,43 +229,40 @@ export function LautUebung({ laut, onDone }: Props) {
 
   return (
     <div className="stage stage--laut">
-      <div className="training fade-in">
-        <div className="training-title">{title}</div>
+      {/* Lautkarte im VOLLBILD — das wichtigste Element füllt den ganzen Schirm. */}
+      <div className="laut-fs fade-in">
+        <video
+          ref={cardRef}
+          className="laut-fs-video"
+          src={lautkarteSrc(laut)}
+          playsInline
+          preload="auto"
+          onLoadedMetadata={(e) => {
+            const d = e.currentTarget.duration || 6
+            // Kurz nachdem die Mutter den Laut gesprochen hat (nicht erst am Ende).
+            listenAtRef.current = Math.min(6.2, Math.max(5.0, d - 0.6))
+          }}
+          onTimeUpdate={(e) => {
+            if (e.currentTarget.currentTime >= listenAtRef.current) advanceCard()
+          }}
+          onEnded={() => advanceCard()}
+        />
+        <div className="laut-fs-title">{title}</div>
 
-        {/* Die Lautkarte bleibt sichtbar — beim Zuhören liegt der Mikrofon-Orb
-            TRANSPARENT über dem letzten Frame, als visuelle Hilfe fürs Kind. */}
-        <div className="media-frame laut-card">
-          <video
-            ref={cardRef}
-            src={lautkarteSrc(laut)}
-            playsInline
-            preload="auto"
-            onLoadedMetadata={(e) => {
-              const d = e.currentTarget.duration || 6
-              // Kurz nachdem die Mutter den Laut gesprochen hat (nicht erst am Ende).
-              listenAtRef.current = Math.min(6.2, Math.max(5.0, d - 0.6))
-            }}
-            onTimeUpdate={(e) => {
-              if (e.currentTarget.currentTime >= listenAtRef.current) advanceCard()
-            }}
-            onEnded={() => advanceCard()}
-          />
-
-          {(phase === 'listen' || phase === 'fallback') && (
-            <div className="laut-listen">
-              <div ref={orbRef} className="mic-orb">
-                <MicIcon />
-              </div>
-              {phase === 'fallback' && (
-                // Kein Mikrofon erlaubt: die Bezugsperson gibt mit einem Tipp weiter.
-                <div className="tap-hint" style={{ marginTop: 12 }}>
-                  <button className="pulse-dot" aria-label="Weiter" onClick={() => onDone(false)} />
-                  <span className="tap-label">Weiter</span>
-                </div>
-              )}
+        {(phase === 'listen' || phase === 'fallback') && (
+          <div className="laut-listen">
+            <div ref={orbRef} className="mic-orb">
+              <MicIcon />
             </div>
-          )}
-        </div>
+            {phase === 'fallback' && (
+              // Kein Mikrofon erlaubt: die Bezugsperson gibt mit einem Tipp weiter.
+              <div className="tap-hint" style={{ marginTop: 12 }}>
+                <button className="pulse-dot" aria-label="Weiter" onClick={() => onDone(false)} />
+                <span className="tap-label">Weiter</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
