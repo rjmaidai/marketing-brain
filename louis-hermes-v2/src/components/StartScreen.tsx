@@ -62,7 +62,7 @@ export function StartScreen({ hasProgress, onStart }: Props) {
 
         {/* Sichtbarer Build-Stempel: zeigt sofort, ob die neueste Version geladen ist. */}
         <p className="subtle" style={{ fontSize: 11, opacity: 0.4, marginTop: 18 }}>
-          Build 22 · Hau-den-Lukas kompakt (58vh) · Kachelspiel mit weichem Hintergrund (Musik-Fix folgt nach Abnahme)
+          Build 23 · Everglow pro Szene (deine Kuratierung) · saubere Stimme, keine Doppel-Musik
         </p>
       </div>
     </div>
