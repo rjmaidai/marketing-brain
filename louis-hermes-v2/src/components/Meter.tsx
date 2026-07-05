@@ -17,14 +17,8 @@ interface Particle {
   size: number
 }
 
-// Track am Turm (in % der Turmhöhe): unten (Start, ~10) = wenig, oben (100) = geschafft.
-// Kalibriert auf die hundlose Anzeige (hau_gauge.png) — nur Zahlenskala + Pfoten-Sockel.
-const TRACK_BOTTOM = 60.5
-const TRACK_TOP = 5.4
-
 export function Meter({ progress }: { progress: number }) {
   const p = Math.max(0, Math.min(1, progress))
-  const puckTop = TRACK_BOTTOM - (TRACK_BOTTOM - TRACK_TOP) * p
 
   const [parts, setParts] = useState<Particle[]>([])
   const idRef = useRef(0)
@@ -57,7 +51,6 @@ export function Meter({ progress }: { progress: number }) {
     <>
       <div className="meter" aria-hidden="true">
         <img className="meter-tower" src={graphicSrc('hau_gauge.png')} alt="" draggable={false} />
-        <div className="meter-puck" style={{ top: `${puckTop}%` }} />
       </div>
       <div className="confetti-layer" aria-hidden="true">
         {parts.map((part) => (
