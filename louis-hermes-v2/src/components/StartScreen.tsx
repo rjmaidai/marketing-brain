@@ -62,7 +62,7 @@ export function StartScreen({ hasProgress, onStart }: Props) {
 
         {/* Sichtbarer Build-Stempel: zeigt sofort, ob die neueste Version geladen ist. */}
         <p className="subtle" style={{ fontSize: 11, opacity: 0.4, marginTop: 18 }}>
-          Build 18 · Lautkarte: Standbild-Hintergrund (kein 2. Video), Karte spielt wieder
+          Build 19 · Spürnase-Wege (dein Einzeichnen!) · Meter volle Höhe · Puzzle gross · Kachel-Auto-Reshow
         </p>
       </div>
     </div>

@@ -150,7 +150,11 @@ export function Merken({ seed, nextBeatSrc, imageSrc, onDone }: Props) {
         doneRef.current = true
         showFeedback('falsch').then(onDone)
       } else {
-        void showFeedback('falsch') // inputIdx bleibt -> gleiche Stelle nochmal
+        // „Probiere es nochmal" -> danach die Reihenfolge AUTOMATISCH wieder zeigen
+        // (kein Knopfdruck nötig), dann tippt das Kind sie erneut nach.
+        showFeedback('falsch').then(() => {
+          if (mountedRef.current && !doneRef.current) showSequence()
+        })
       }
     }
   }
