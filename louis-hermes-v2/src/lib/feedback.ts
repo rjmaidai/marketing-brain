@@ -16,10 +16,10 @@ type Kind = 'richtig' | 'falsch'
 const imgSrc = (k: Kind) => `${import.meta.env.BASE_URL}assets/feedback/${k}.png`
 const audioSrc = (k: Kind) => `${import.meta.env.BASE_URL}assets/feedback/${k}.mp3`
 
-const PRE_MS = 320 // kurze Ruhe, bevor das Lob/‌„nochmal" erscheint
-const MIN_MS = 1700 // Mindestdauer, damit nichts nur „aufblitzt"
-const HOLD_MS = 450 // ruhig stehen lassen
-const BRIDGE_MS = 550 // Ebene deckt noch, während der nächste Beat einblendet
+const PRE_MS = 650 // ruhige Pause VOR dem Lob — kein Schockmoment, sanft ankündigen
+const MIN_MS = 1800 // Mindestdauer, damit nichts nur „aufblitzt"
+const HOLD_MS = 500 // ruhig stehen lassen
+const BRIDGE_MS = 600 // Ebene deckt noch, während der nächste Beat einblendet
 
 const delay = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms))
 const raf = () => new Promise<void>((r) => requestAnimationFrame(() => r()))
