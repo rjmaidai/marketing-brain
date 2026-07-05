@@ -172,8 +172,15 @@ export function Merken({ seed, nextBeatSrc, imageSrc, onDone }: Props) {
 
   return (
     <div className="stage stage--meter">
+      {img && (
+        <div
+          className="merken-backdrop"
+          aria-hidden
+          style={{ backgroundImage: `url(${img})` }}
+        />
+      )}
       <Meter progress={inputIdx / sequence.length} />
-      <div className="training fade-in">
+      <div className="training fade-in merken-content">
         <div className="training-title">
           {showing ? 'Merke dir die Reihenfolge' : 'Jetzt du — tippe sie nach'}
         </div>

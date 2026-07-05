@@ -69,8 +69,9 @@ body {
 /* Minispiel-Bühne mit kompaktem Fortschrittsturm (Ecke unten links):
    Inhalt etwas nach rechts, damit der Turm nichts verdeckt. */
 .stage--meter {
-  /* Voller Turm links -> Inhalt nach rechts halten. */
-  padding-left: calc(12px + min(27vw, 280px));
+  /* Kompakter Turm links (58vh, Seitenverhältnis 0.334 -> ~19.4vh breit) ->
+     Inhalt nur so weit nach rechts halten, dass der Turm frei steht. */
+  padding-left: calc(12px + 22vh);
   /* Sehr dezenter, warmer Verlauf statt flachem Schwarz. */
   background: radial-gradient(120% 95% at 62% 42%, #3a2f28 0%, #251e19 58%, var(--bg) 100%);
 }
@@ -417,10 +418,10 @@ body {
 .meter {
   position: fixed;
   left: max(2px, env(safe-area-inset-left));
-  /* Stehend am linken Rand, vertikal zentriert, ~20% kürzer als früher. */
+  /* Stehend am linken Rand, vertikal zentriert, deutlich kompakter. */
   top: 50%;
   transform: translateY(-50%);
-  height: 80vh;
+  height: 58vh;
   z-index: 20;
   pointer-events: none;
   filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.45));
@@ -538,6 +539,22 @@ body {
 }
 
 /* Merken — grosse, fast bildfüllende Kacheln des kommenden Story-Bildes (3×2) */
+/* Kachelspiel: sehr dezentes, weichgezeichnetes Standbild statt Schwarz. */
+.merken-backdrop {
+  position: fixed;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transform: scale(1.2);
+  filter: blur(52px) brightness(0.5) saturate(1.2);
+  opacity: 0.5;
+  z-index: 0;
+  pointer-events: none;
+}
+.merken-content {
+  position: relative;
+  z-index: 1;
+}
 .mem-grid {
   width: min(98vw, 96vh);
   max-width: 100%;
