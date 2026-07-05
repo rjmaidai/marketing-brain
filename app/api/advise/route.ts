@@ -8,6 +8,7 @@ import {
   buildAdvisorSystemPrompt,
   buildAdvisorUserMessage,
   buildAdvisorFollowUpMessage,
+  MAX_COMPANY_PROFILE,
 } from "@/lib/advisor-prompt";
 import { getHead } from "@/lib/heads";
 import type { HeadSelection } from "@/lib/types";
@@ -75,6 +76,7 @@ export async function POST(req: NextRequest) {
     followUp?: string;
     headIds?: unknown;
     previousTurns?: unknown;
+    companyProfile?: unknown;
   };
   try {
     body = await req.json();
@@ -88,6 +90,10 @@ export async function POST(req: NextRequest) {
   const situation = (body.situation ?? "").trim();
   const followUp = (body.followUp ?? "").trim();
   const isFollowUp = followUp.length > 0;
+  const companyProfile =
+    typeof body.companyProfile === "string"
+      ? body.companyProfile.trim().slice(0, MAX_COMPANY_PROFILE)
+      : "";
 
   if (situation.length < 8) {
     return new Response(
@@ -158,6 +164,10 @@ export async function POST(req: NextRequest) {
         } else {
           send("status", { phase: "consulting" });
 
+          const selectionUserContent = companyProfile
+            ? `${buildSelectionUserMessage(situation)}\n\nKONTEXT DER FIRMA (Positionierung/Ideologie, für die beraten wird):\n${companyProfile}`
+            : buildSelectionUserMessage(situation);
+
           let selection: HeadSelection | null = null;
           for (let attempt = 0; attempt < 3 && !selection; attempt++) {
             const selectionMsg = await client.messages.create({
@@ -165,9 +175,7 @@ export async function POST(req: NextRequest) {
               max_tokens: 800,
               temperature: 0,
               system: SELECTION_SYSTEM_PROMPT,
-              messages: [
-                { role: "user", content: buildSelectionUserMessage(situation) },
-              ],
+              messages: [{ role: "user", content: selectionUserContent }],
             });
             const rawSelection = selectionMsg.content
               .map((b) => (b.type === "text" ? b.text : ""))
@@ -220,9 +228,9 @@ export async function POST(req: NextRequest) {
 
         const advisorStream = await client.messages.stream({
           model: MODEL,
-          max_tokens: 1200,
+          max_tokens: 1400,
           temperature: 0.7,
-          system: buildAdvisorSystemPrompt(advisorHeadIds),
+          system: buildAdvisorSystemPrompt(advisorHeadIds, companyProfile),
           messages,
         });
 

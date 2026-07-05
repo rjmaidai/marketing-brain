@@ -15,10 +15,11 @@ export function HeadsSection() {
   return (
     <section className="mt-16 border-t border-white/10 pt-12">
       <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-gold mb-2">
-        Die 45 Koepfe
+        Die {HEADS.length} Koepfe
       </p>
       <p className="text-sm text-muted mb-8 max-w-lg">
-        9 Segmente. Je 5 Experten. Klick auf ein Segment um die Koepfe zu sehen.
+        9 Segmente, inkl. Schweizer Perspektive. Klick auf ein Segment um die
+        Koepfe zu sehen.
       </p>
 
       <div className="flex flex-wrap gap-2 mb-8">

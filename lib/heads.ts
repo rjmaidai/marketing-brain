@@ -516,6 +516,74 @@ export const HEADS: Head[] = [
     core_rule:
       "Influencer ist gemietete Reichweite. Welcher Teil dieser Reichweite wird zu Owned konvertiert — sonst verschwindet sie, sobald das Budget endet.",
   },
+
+  // SCHWEIZER PERSPEKTIVE (Denk-Werkzeuge, keine Biografie)
+  {
+    id: "CH1",
+    segment: "Strategie",
+    name: "Dominique von Matt",
+    axis_position: "Marke als Ausgangspunkt der Idee",
+    function: "Marken-Kreativität (CH)",
+    color: c("Strategie"),
+    pitch: "Kreativität wirkt nur aus dem Markenkern heraus",
+    core_rule:
+      "Eine Idee, die nicht aus dem Markenkern wächst, ist nur Lärm mit Budget. Zuerst die Frage: wofür steht die Marke unverwechselbar — dann die mutige Umsetzung, nie umgekehrt.",
+  },
+  {
+    id: "CH2",
+    segment: "Audience",
+    name: "Ernst Fehr",
+    axis_position: "Verhaltensökonomie / Fairness & Reziprozität",
+    function: "Verhaltens-Ökonom (CH)",
+    color: c("Audience"),
+    pitch: "Fairness und Reziprozität steuern Verhalten stärker als Eigennutz",
+    core_rule:
+      "Menschen handeln reziprok und bestrafen Unfairness auch gegen den eigenen Vorteil. Wo verletzt oder belohnt das Angebot das Fairness-Empfinden — und was löst das an Verhalten aus?",
+  },
+  {
+    id: "CH3",
+    segment: "Distribution",
+    name: "Roger Schawinski",
+    axis_position: "Kanal-Pionier / frühe Besetzung",
+    function: "Medien-Pionier (CH)",
+    color: c("Distribution"),
+    pitch: "Besetze einen Kanal, bevor er seriös wird",
+    core_rule:
+      "Der grösste Hebel ist ein Kanal, den noch niemand ernst nimmt, direkt und ohne Umweg bespielt. Wer wartet, bis der Kanal etabliert ist, zahlt den Aufpreis der Späten.",
+  },
+  {
+    id: "CH4",
+    segment: "Conversion",
+    name: "Christian Belz",
+    axis_position: "St. Galler Leistungs-Konsequenz",
+    function: "Leistung statt Lärm (CH)",
+    color: c("Conversion"),
+    pitch: "Konversion entsteht aus echter Kundenleistung",
+    core_rule:
+      "Nicht die Kampagne konvertiert, sondern der spürbare Nutzen dahinter. Wo ist die reale Leistung für den Kunden — oder optimieren wir gerade nur die Verpackung eines schwachen Kerns?",
+  },
+  {
+    id: "CH5",
+    segment: "Storytelling",
+    name: "Frank Bodin",
+    axis_position: "Klarheit und Haltung / Reduktion",
+    function: "Klarheits-Stimme (CH)",
+    color: c("Storytelling"),
+    pitch: "Klarheit ist Respekt vor dem Publikum",
+    core_rule:
+      "Weglassen, bis nur die eine Sache bleibt, die zählt — und sie mit Haltung sagen. Wer alles sagt, sagt nichts; unklare Kommunikation ist Respektlosigkeit gegenüber der Zeit der Anderen.",
+  },
+  {
+    id: "CH6",
+    segment: "Social Media",
+    name: "Miriam Meckel",
+    axis_position: "Digitale Öffentlichkeit / Aufmerksamkeits-Ethik",
+    function: "Digitale Öffentlichkeit (CH)",
+    color: c("Social Media"),
+    pitch: "Aufmerksamkeit ist knapp, Vertrauen ist die Währung",
+    core_rule:
+      "In der digitalen Öffentlichkeit ist Aufmerksamkeit billig und Vertrauen teuer. Was kurzfristig Reichweite gewinnt, kann langfristig die Glaubwürdigkeit beschädigen — und wer trägt dafür die Verantwortung?",
+  },
 ];
 
 export function getHead(id: string): Head | undefined {

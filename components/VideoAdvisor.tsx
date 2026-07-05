@@ -42,6 +42,9 @@ export function VideoAdvisor() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [micSupported, setMicSupported] = useState<boolean>(false);
+  const [companyProfile, setCompanyProfile] = useState<string>("");
+  const [profileOpen, setProfileOpen] = useState<boolean>(false);
+  const [profileSaved, setProfileSaved] = useState<boolean>(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const sessionRef = useRef<HeygenSession | null>(null);
@@ -51,10 +54,38 @@ export function VideoAdvisor() {
   const speakChainRef = useRef<Promise<void>>(Promise.resolve());
   const recognitionRef = useRef<any>(null);
   const ttsActiveRef = useRef<number>(0);
+  const companyProfileRef = useRef<string>("");
 
   useEffect(() => {
     turnsRef.current = turns;
   }, [turns]);
+
+  useEffect(() => {
+    companyProfileRef.current = companyProfile;
+  }, [companyProfile]);
+
+  // Firmenprofil / Ideologie aus dem Browser laden.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const saved = window.localStorage.getItem("mb_company_profile");
+      if (saved) {
+        setCompanyProfile(saved);
+        setProfileOpen(saved.trim().length > 0 ? false : false);
+      }
+    } catch {
+      /* localStorage evtl. gesperrt. */
+    }
+  }, []);
+
+  const saveProfile = useCallback(() => {
+    try {
+      window.localStorage.setItem("mb_company_profile", companyProfile);
+      setProfileSaved(true);
+    } catch {
+      /* ignorieren */
+    }
+  }, [companyProfile]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -301,6 +332,7 @@ export function VideoAdvisor() {
 
       const activeMode = await ensureSession();
 
+      const profile = companyProfileRef.current.trim();
       const isFollowUp = turnsRef.current.length > 0;
       if (isFollowUp) {
         await runStream(
@@ -309,11 +341,12 @@ export function VideoAdvisor() {
             followUp: clean,
             headIds: headIdsRef.current,
             previousTurns: turnsRef.current,
+            companyProfile: profile,
           },
           clean,
         );
       } else {
-        await runStream({ situation: clean }, clean);
+        await runStream({ situation: clean, companyProfile: profile }, clean);
       }
       void activeMode;
     },
@@ -396,8 +429,69 @@ export function VideoAdvisor() {
   const busy = status === "consulting" || status === "speaking";
   const started = turns.length > 0 || !!currentUser || status !== "cold";
 
+  const profileActive = companyProfile.trim().length > 0;
+
   return (
     <div className="w-full">
+      {/* Firmenprofil / Ideologie */}
+      <div className="mb-4 rounded-xl border border-white/10 bg-black/20">
+        <button
+          type="button"
+          onClick={() => setProfileOpen((o) => !o)}
+          className="flex w-full items-center justify-between px-4 py-3 text-left"
+        >
+          <span className="flex items-center gap-2 text-sm font-semibold">
+            <span
+              className={`inline-block h-2 w-2 rounded-full ${
+                profileActive ? "bg-gold" : "bg-white/30"
+              }`}
+            />
+            Firmenprofil &amp; Ideologie
+            <span className="text-xs font-normal text-muted">
+              {profileActive
+                ? "— der Berater richtet sich danach aus"
+                : "— optional: Positionierung, Werte, Weltsicht der Firma"}
+            </span>
+          </span>
+          <span className="text-muted">{profileOpen ? "−" : "+"}</span>
+        </button>
+
+        {profileOpen && (
+          <div className="border-t border-white/10 px-4 py-4">
+            <p className="mb-2 text-xs leading-relaxed text-muted">
+              Wofür steht die Firma? Positionierung, Werte, Tonalität, No-Gos,
+              strategische Überzeugungen. Der Berater gewichtet die
+              Kopf-Argumente danach — bleibt aber ehrlich, wenn die Ideologie
+              mit solidem Marketing kollidiert.
+            </p>
+            <textarea
+              value={companyProfile}
+              onChange={(e) => {
+                setCompanyProfile(e.target.value);
+                setProfileSaved(false);
+              }}
+              rows={5}
+              maxLength={2500}
+              placeholder="z. B. Wir sind eine Schweizer Premium-Marke für nachhaltige Outdoor-Ausrüstung. Wir sprechen nie über Rabatte, sondern über Langlebigkeit und Handwerk. Unsere Haltung: Understatement statt Hype…"
+              className="w-full resize-none rounded-lg border border-white/15 bg-black/30 px-3 py-2.5 text-sm outline-none transition focus:border-gold/50"
+            />
+            <div className="mt-2 flex items-center justify-between">
+              <span className="text-[11px] text-muted">
+                {companyProfile.trim().length}/2500 Zeichen — lokal im Browser
+                gespeichert
+              </span>
+              <button
+                type="button"
+                onClick={saveProfile}
+                className="rounded-lg border border-gold/40 bg-gold/10 px-3 py-1.5 text-xs font-semibold text-gold transition hover:bg-gold/20"
+              >
+                {profileSaved ? "Gespeichert ✓" : "Profil speichern"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         {/* Video / Avatar */}
         <div className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-surface/40 to-bg shadow-2xl">
@@ -463,7 +557,7 @@ export function VideoAdvisor() {
                 </p>
                 <p className="max-w-xs text-sm leading-relaxed text-muted">
                   Schildern Sie Ihr Anliegen — per Sprache oder Text. Hinter
-                  dem Berater urteilen 45 Marketing-Köpfe. Sie hören eine klare
+                  dem Berater urteilen 51 Marketing-Köpfe. Sie hören eine klare
                   Empfehlung, nicht zehn Meinungen.
                 </p>
               </div>

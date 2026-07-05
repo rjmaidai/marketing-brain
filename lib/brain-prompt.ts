@@ -54,7 +54,7 @@ export function buildDiscussionSystemPrompt(selectedIds: string[]): string {
     )
     .join("\n");
 
-  return `Du bist das Marketing-Hirn — eine Wissensarchitektur aus 45 Experten-Positionen.
+  return `Du bist das Marketing-Hirn — eine Wissensarchitektur aus ${HEADS.length} Experten-Positionen.
 
 Du bist KEIN Chatbot. Du orchestrierst eine kurze Diskussion zwischen den unten aktivierten Köpfen, die zu einer belastbaren Erkenntnis führt — plus einer offenen Frage, die der Nutzer selbst beantworten muss.
 

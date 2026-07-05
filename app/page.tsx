@@ -160,7 +160,7 @@ export default function Page() {
           Marketing Brain
         </p>
         <h1 className="text-4xl font-bold tracking-tight mb-3">
-          45 Koepfe. Kein Konsens.
+          51 Koepfe. Kein Konsens.
         </h1>
         <p className="text-muted text-sm max-w-md mx-auto leading-relaxed">
           Gib eine Idee ein. Das Gremium streitet. Du bekommst echte Reibung.
@@ -200,7 +200,7 @@ export default function Page() {
       <HeadsSection />
 
       <footer className="mt-auto pt-16 text-center text-[11px] uppercase tracking-[0.18em] text-muted">
-        45 Koepfe - 9 Segmente - Reibung statt Glaettung
+        51 Koepfe - 9 Segmente - Reibung statt Glaettung
       </footer>
     </main>
   );

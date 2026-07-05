@@ -11,7 +11,7 @@ Kein Chatbot. Kein Q&A. Reibung statt Glättung.
 - **`/` — Das Gremium.** 9–12 Köpfe streiten sichtbar und liefern `[ERKENNTNIS]`
   + `[OFFENE FRAGE]`. Reibung, nicht Konsens.
 - **`/berater` — Der Video-Berater.** Ein Echtzeit-Videoagent für Firmen mit
-  Marketing-Anliegen. Hinter ihm urteilen dieselben 45 Köpfe (intern), er
+  Marketing-Anliegen. Hinter ihm urteilen dieselben 51 Köpfe (intern), er
   spricht aber mit **einer** souveränen Stimme — per Sprache oder Text bedienbar.
   Live-Gesicht via HeyGen; ohne Key läuft er über einen animierten Avatar +
   Browser-Stimme.
@@ -19,12 +19,21 @@ Kein Chatbot. Kein Q&A. Reibung statt Glättung.
 ### Video-Berater — wie er funktioniert
 
 1. Firma schildert ihr Anliegen (Sprache via Web Speech API oder Text).
-2. **Interne Selektion:** Claude wählt die passenden Köpfe (unsichtbar).
-3. **Souveräne Synthese** (streaming): der Berater spricht EINE klare, sprech-
-   optimierte Empfehlung — benennt die echte Spannung, glättet nicht, und endet
-   mit der einen Frage, die die Firma selbst beantworten muss.
-4. Der Text wird **satzweise** an das Live-Gesicht (HeyGen) bzw. die Browser-
+2. **Firmenprofil / Ideologie** (optional): Die Firma hinterlegt Positionierung,
+   Werte und Weltsicht (lokal im Browser gespeichert). Das fließt in Selektion
+   und Beratung ein — der Berater gewichtet die Argumente danach, bleibt aber
+   ehrlich, wenn die Ideologie mit solidem Marketing kollidiert.
+3. **Interne Selektion:** Claude wählt die passenden Köpfe (unsichtbar).
+4. **Souveräne Synthese** (streaming): der Berater **vereint drei bis fünf
+   Kopf-Argumente** zu einem Urteil — zeigt, wo sie konvergieren, benennt den
+   echten Trade-off, wo sie sich widersprechen, und bezieht Position. Endet mit
+   der einen Frage, die die Firma selbst beantworten muss.
+5. Der Text wird **satzweise** an das Live-Gesicht (HeyGen) bzw. die Browser-
    Stimme übergeben — der Berater beginnt zu sprechen, sobald der erste Satz steht.
+
+Die 51 Köpfe umfassen auch eine **Schweizer Perspektive** (Marke, Verhaltens-
+ökonomie, Medien-Pionier, St. Galler Leistungs-Konsequenz, Klarheit/Haltung,
+digitale Öffentlichkeit) — als Denk-Werkzeuge, nicht als Biografien.
 
 Live-Gesicht freischalten: `HEYGEN_API_KEY` (optional `HEYGEN_AVATAR_ID`,
 `HEYGEN_VOICE_ID`) in `.env.local` setzen. Der Haupt-Key bleibt server-seitig;
@@ -54,7 +63,7 @@ Dann http://localhost:3000 öffnen.
 ## Wie es funktioniert
 
 1. Nutzer gibt eine Idee oder ein Problem ein (1–3 Sätze).
-2. **Selektor-Call** (non-streaming): Claude wählt 3–5 Köpfe aus den 45
+2. **Selektor-Call** (non-streaming): Claude wählt 9–12 Köpfe aus den 51
    verfügbaren und prüft Sequenz-/Ritson-/PMF-Gate.
 3. **Diskussions-Call** (streaming): die ausgewählten Köpfe diskutieren in
    strukturiertem Format. Widersprüche werden explizit benannt, nicht
@@ -77,7 +86,7 @@ marketing-brain/
 │   ├── MessageBubble.tsx
 │   └── Conclusion.tsx
 └── lib/
-    ├── heads.ts               # Die 45 Köpfe mit Metadaten
+    ├── heads.ts               # Die 51 Köpfe mit Metadaten (inkl. CH-Perspektive)
     ├── segments.ts            # Die 9 Segmente
     ├── brain-prompt.ts        # System-Prompts (Selektion + Diskussion)
     ├── parser.ts              # Stream-Parser für [KOPF: Name] / [ERKENNTNIS] / [OFFENE FRAGE]

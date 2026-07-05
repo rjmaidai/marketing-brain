@@ -38,7 +38,7 @@ Wenn Deploy fehlschlägt → Screenshot der Fehlermeldung anfordern, dann Build-
 
 - `main` (4686b79): Fertige Next.js 14 App mit Tailwind, Streaming-API gegen Anthropic
   - `app/api/discuss/route.ts` — Streaming-API (claude-sonnet-4-5 default, via `ANTHROPIC_MODEL` override)
-  - `lib/heads.ts` — alle 45 Köpfe
+  - `lib/heads.ts` — alle 51 Köpfe (inkl. Schweizer Perspektive CH1–CH6)
   - `lib/brain-prompt.ts` — System-Prompt mit Ritson-Gate
   - `components/` — InputForm, Discussion, MessageBubble, Conclusion
   - `DEPLOY.md` — Setup-Anleitung
