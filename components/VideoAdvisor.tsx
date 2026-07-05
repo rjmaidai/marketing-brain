@@ -186,10 +186,25 @@ export function VideoAdvisor() {
             }
             return;
           }
-          // JSON { available:false } o.ä. → OpenAI nicht nutzbar.
+          // JSON { available:false } o.ä. → OpenAI nicht nutzbar. Grund sichtbar machen.
           openaiVoiceRef.current = false;
+          try {
+            const j = (await res.json()) as { reason?: string };
+            setNotice(
+              `Die OpenAI-Stimme ist nicht aktiv — Sie hören die Browser-Stimme. ${
+                j?.reason ?? ""
+              } (OPENAI_API_KEY im Vercel-Projekt setzen und neu deployen.)`,
+            );
+          } catch {
+            setNotice(
+              "Die OpenAI-Stimme ist nicht aktiv — Sie hören die Browser-Stimme. (OPENAI_API_KEY im Vercel-Projekt setzen und neu deployen.)",
+            );
+          }
         } catch {
           openaiVoiceRef.current = false;
+          setNotice(
+            "Stimme über den Browser (Fallback) — OpenAI nicht erreichbar.",
+          );
         }
       }
 
