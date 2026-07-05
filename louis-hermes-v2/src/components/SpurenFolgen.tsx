@@ -7,54 +7,51 @@ import { Meter } from './Meter'
 
 // Spiel „Spürnase / Spuren folgen" — VERSION 2, mit echten Hintergründen:
 // Jedes Spiel hat ein Landschaftsbild mit einem sichtbaren Weg. Der Finger MUSS
-// dem Weg im Bild folgen (die Linie liegt genau auf dem Pfad). Hermès (die Nase)
-// schnüffelt entlang. Kein Timer — der Weg wartet.
+// dem Weg im Bild folgen (die helle Spur liegt genau auf dem Pfad) — IMMER von
+// links nach rechts. Am rechten Bildrand wartet das gesuchte Sujet (Mütze bzw.
+// Dieb); nur dieses eine Sujet wird gezeigt, sonst keine Extra-Bildchen.
 
 interface Props {
   seed: number
-  target: 'muetze' | 'dieb' | 'ball'
+  target: 'muetze' | 'dieb'
   onDone: () => void
 }
 
-// Hintergrund + Weg-Stützpunkte (in Bild-Pixeln) je Ziel.
-// Stützpunkte sind direkt in Bild-Pixeln (die Bilder sind 1280 breit) auf dem
-// sichtbaren Sandweg abgegriffen. Reihenfolge = Laufrichtung der Nase; der letzte
-// Punkt liegt am Ziel (Ball / Dieb / Mütze).
-const TRACE: Record<Props['target'], { bg: string; w: number; h: number; title: string; wp: [number, number][] }> = {
-  ball: {
-    bg: 'spur_ball.jpg',
+type Cfg = {
+  bg: string
+  w: number
+  h: number
+  title: string
+  wp: [number, number][]
+  // Ziel-Sujet am rechten Rand (Bild-Pixel-Box).
+  sujet: { img: string; x: number; y: number; w: number; h: number }
+}
+
+// Stützpunkte direkt in Bild-Pixeln (Bilder sind 1280 breit) auf dem sichtbaren
+// Sandweg abgegriffen. Reihenfolge = Laufrichtung: immer von links nach rechts.
+const TRACE: Record<Props['target'], Cfg> = {
+  muetze: {
+    bg: 'spur_muetze.jpg',
     w: 1280,
-    h: 960,
-    title: 'Schnüffle zum Ball',
-    // Vom Baum (rechts) den S-Bogen entlang zurück zum Ball am Zaun (links).
+    h: 853,
+    title: 'Schnüffle zur Mütze',
     wp: [
-      [1160, 485], [1090, 510], [1010, 555], [930, 610], [850, 650],
-      [770, 665], [690, 615], [620, 545], [560, 470], [500, 415],
-      [430, 370], [340, 340], [250, 345], [185, 360],
+      [0, 520], [120, 490], [250, 440], [400, 370], [560, 290],
+      [680, 250], [800, 270], [920, 350], [1040, 460], [1150, 550], [1275, 590],
     ],
+    sujet: { img: 'muetze.png', x: 955, y: 430, w: 320, h: 213 },
   },
   dieb: {
     bg: 'spur_dieb.jpg',
     w: 1280,
     h: 960,
     title: 'Der Spur zum Dieb folgen',
-    // Vom linken Rand die Uferschlange entlang nach rechts zum Dieb.
     wp: [
       [0, 300], [90, 400], [170, 490], [250, 518], [330, 500],
       [400, 540], [470, 608], [540, 628], [620, 608], [700, 570],
-      [780, 600], [880, 648], [980, 658], [1080, 640], [1180, 640], [1280, 660],
+      [780, 600], [880, 648], [980, 658], [1080, 640], [1180, 640], [1275, 655],
     ],
-  },
-  muetze: {
-    bg: 'spur_muetze.jpg',
-    w: 1280,
-    h: 853,
-    title: 'Schnüffle zur Mütze',
-    // Vom linken Rand über den Hügel-Bogen nach rechts zur Mütze.
-    wp: [
-      [0, 520], [120, 490], [250, 440], [400, 370], [560, 290],
-      [680, 250], [800, 270], [920, 350], [1040, 460], [1150, 550], [1280, 590],
-    ],
+    sujet: { img: 'dieb_frei.png', x: 975, y: 360, w: 300, h: 288 },
   },
 }
 
@@ -92,22 +89,40 @@ export function SpurenFolgen({ seed, target, onDone }: Props) {
   const [asked, setAsked] = useState(false)
   const doneRef = useRef(false)
   const mountedRef = useRef(true)
-  useEffect(() => () => void (mountedRef.current = false), [])
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
-  // seed fliesst nur symbolisch ein — der Weg ist fest ans Bild gebunden.
-  void seed
+  void seed // der Weg ist fest ans Bild gebunden
   const pts = useMemo(() => resample(cfg.wp, N), [cfg])
-  const REACH = cfg.w * 0.12
+  const REACH = cfg.w * 0.13 // grosszügiger Fangradius für Kinderfinger
 
   useEffect(() => {
     resumeMic()
     resumeAudio()
-    playSample(spielsatzSrc(SPIELSATZ.spuren)).then(() => {
-      if (mountedRef.current) setAsked(true)
-    })
+    // Nach der Ansage freigeben — ABER nie dauerhaft sperren: falls der Ton
+    // mal nicht startet/auflöst, gibt ein Fail-safe nach kurzer Zeit trotzdem frei.
+    let fired = false
+    const arm = () => {
+      if (!fired && mountedRef.current) {
+        fired = true
+        setAsked(true)
+      }
+    }
+    playSample(spielsatzSrc(SPIELSATZ.spuren)).then(arm)
+    const t = window.setTimeout(arm, 4000)
+    return () => window.clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Voller Weg (blasse Führung) und zurückgelegter Weg (leuchtet).
+  const guideD = useMemo(
+    () => pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' '),
+    [pts],
+  )
   const trailD = useMemo(
     () => pts.slice(0, reached + 1).map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' '),
     [pts, reached],
@@ -121,29 +136,35 @@ export function SpurenFolgen({ seed, target, onDone }: Props) {
     }
   }
 
+  // Nur vorwärts, nur wenn der Finger nahe am Weg ist. Ein kleines Fenster nach
+  // vorn verhindert, dass man an Kurven „abkürzt" oder springt.
   function follow(e: React.PointerEvent<SVGSVGElement>) {
     if (doneRef.current || !asked) return
     const p = toLocal(e)
-    let next = reached
-    for (let i = reached; i < N; i++) {
-      if (Math.hypot(pts[i].x - p.x, pts[i].y - p.y) < REACH) next = i
-      else break
+    let best = reached
+    let bestD = Infinity
+    const look = Math.min(N - 1, reached + 10)
+    for (let i = reached; i <= look; i++) {
+      const d = Math.hypot(pts[i].x - p.x, pts[i].y - p.y)
+      if (d < bestD) {
+        bestD = d
+        best = i
+      }
     }
-    if (next !== reached) {
-      if (Math.floor(next / 10) > Math.floor(reached / 10)) playTone(Math.min(5, Math.floor(next / 10)))
-      setReached(next)
-    }
-    if (next >= N - 1) {
+    if (bestD > REACH || best <= reached) return
+    if (Math.floor(best / 12) > Math.floor(reached / 12)) playTone(Math.min(5, Math.floor(best / 12)))
+    setReached(best)
+    if (best >= N - 1) {
       doneRef.current = true
       showFeedback('richtig').then(onDone)
     }
   }
 
   const head = pts[Math.min(reached, N - 1)]
-  const pawIdx = pts.map((_, i) => i).filter((i) => i % 6 === 3)
+  const su = cfg.sujet
 
   return (
-    <div className="stage">
+    <div className="stage stage--meter">
       <Meter progress={reached / (N - 1)} />
       <div className="training fade-in">
         <div className="training-title">{cfg.title}</div>
@@ -165,27 +186,15 @@ export function SpurenFolgen({ seed, target, onDone }: Props) {
           </defs>
           {/* Landschaft mit dem Weg */}
           <image href={graphicSrc(cfg.bg)} x={0} y={0} width={cfg.w} height={cfg.h} preserveAspectRatio="xMidYMid slice" />
-          {/* Pfotenabdrücke entlang des Weges: erledigte leuchten, kommende blass */}
-          {pawIdx.map((i) => (
-            <text
-              key={i}
-              x={pts[i].x}
-              y={pts[i].y}
-              fontSize={62}
-              textAnchor="middle"
-              dominantBaseline="central"
-              style={{ opacity: i <= reached ? 1 : 0.4, transition: 'opacity 250ms ease' }}
-            >
-              🐾
-            </text>
-          ))}
+          {/* blasse Führung: zeigt, wo der Weg langgeht */}
+          <path d={guideD} fill="none" stroke="rgba(255,248,230,0.35)" strokeWidth={12} strokeLinecap="round" strokeLinejoin="round" strokeDasharray="4 34" />
           {/* zurückgelegter Weg leuchtet warm */}
-          <path d={trailD} fill="none" stroke="rgba(255,214,150,0.55)" strokeWidth={26} strokeLinecap="round" strokeLinejoin="round" />
-          {/* die schnüffelnde Nase (Hermès) */}
-          <circle cx={head.x} cy={head.y} r={70} fill="url(#nose)" />
-          <text x={head.x} y={head.y} fontSize={90} textAnchor="middle" dominantBaseline="central">
-            🐕
-          </text>
+          <path d={trailD} fill="none" stroke="rgba(255,214,150,0.75)" strokeWidth={24} strokeLinecap="round" strokeLinejoin="round" />
+          {/* gesuchtes Sujet — nur dieses, am rechten Rand */}
+          <image href={graphicSrc(su.img)} x={su.x} y={su.y} width={su.w} height={su.h} preserveAspectRatio="xMidYMid meet" />
+          {/* leuchtender Punkt an der Fingerspitze (kein Tier, kein Extra-Bild) */}
+          <circle cx={head.x} cy={head.y} r={64} fill="url(#nose)" />
+          <circle cx={head.x} cy={head.y} r={18} fill="rgba(255,224,170,0.95)" />
         </svg>
       </div>
       {reached > 0 && !doneRef.current && (

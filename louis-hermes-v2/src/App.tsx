@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { BEATS, beatSrc, makeLautAssignment } from './data/story'
+import { BEATS, beatSrc, graphicSrc, makeLautAssignment } from './data/story'
 import { loadProgress, saveProgress, resetProgress } from './lib/progress'
 import { LautUebung } from './components/LautUebung'
 import { SpurenFolgen } from './components/SpurenFolgen'
@@ -186,7 +186,14 @@ function Training({
     case 'spuren':
       return <SpurenFolgen seed={beatId} target={training.target ?? 'muetze'} onDone={onGame} />
     case 'merken':
-      return <Merken seed={beatId} nextBeatSrc={nextBeatSrc} onDone={onGame} />
+      return (
+        <Merken
+          seed={beatId}
+          nextBeatSrc={nextBeatSrc}
+          imageSrc={training.pic ? graphicSrc(training.pic) : undefined}
+          onDone={onGame}
+        />
+      )
     case 'puzzle':
       return <BildPuzzle seed={beatId} variant={training.variant ?? 'marke'} onDone={onGame} />
   }

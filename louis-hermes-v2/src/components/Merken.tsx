@@ -15,6 +15,8 @@ import { Meter } from './Meter'
 interface Props {
   seed: number
   nextBeatSrc?: string
+  /** Festes Bild für die Kacheln (z. B. der Ball). Hat Vorrang vor dem Poster. */
+  imageSrc?: string
   onDone: () => void
 }
 
@@ -42,7 +44,7 @@ function tilePos(i: number) {
   return `${col * 50}% ${row * 100}%`
 }
 
-export function Merken({ seed, nextBeatSrc, onDone }: Props) {
+export function Merken({ seed, nextBeatSrc, imageSrc, onDone }: Props) {
   const sequence = useRef(makeSequence(seed, 3)).current
   const [img, setImg] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
@@ -57,6 +59,12 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
 
   useEffect(() => {
     let alive = true
+    // Festes Bild (z. B. Ball) hat Vorrang — kein Poster nötig.
+    if (imageSrc) {
+      setImg(imageSrc)
+      setReady(true)
+      return
+    }
     if (!nextBeatSrc) {
       setReady(true)
       return
@@ -69,7 +77,7 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
     return () => {
       alive = false
     }
-  }, [nextBeatSrc])
+  }, [nextBeatSrc, imageSrc])
 
   const clearTimers = () => {
     timers.current.forEach((t) => window.clearTimeout(t))
@@ -150,7 +158,7 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
   }
 
   return (
-    <div className="stage">
+    <div className="stage stage--meter">
       <Meter progress={inputIdx / sequence.length} />
       <div className="training fade-in">
         <div className="training-title">

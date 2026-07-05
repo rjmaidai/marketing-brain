@@ -11,7 +11,9 @@ export interface Training {
   /** Nur bei 'puzzle': welches Bild vervollständigt wird. */
   variant?: 'marke' | 'face'
   /** Nur bei 'spuren' (Spürnase): welches Ziel am Ende der Spur wartet. */
-  target?: 'muetze' | 'dieb' | 'ball'
+  target?: 'muetze' | 'dieb'
+  /** Nur bei 'merken': feste Grafik für die Kacheln (statt Poster des nächsten Beats). */
+  pic?: string
 }
 
 export interface Beat {
@@ -34,7 +36,7 @@ export const BEATS: Beat[] = [
   { id: 3,  file: 'beat_03.mp4', moment: 'Hermès steht stolz in Uniform. Haustür zum Bauernhof öffnet sich.', training: { type: 'puzzle', variant: 'marke' } },
   { id: 4,  file: 'beat_04.mp4', moment: 'Begegnung mit einem grossen Pferd. Hermès bleibt ruhig.', training: { type: 'laut' } },
   { id: 5,  file: 'beat_05.mp4', moment: 'Louis versteckt den Lieblingsball hinter einem Baum.', training: { type: 'puzzle', variant: 'face' } },
-  { id: 6,  file: 'beat_06.mp4', moment: 'Hermès bringt den Ball stolz zurück.', training: { type: 'spuren', target: 'ball' } },
+  { id: 6,  file: 'beat_06.mp4', moment: 'Hermès bringt den Ball stolz zurück.', training: { type: 'merken', pic: 'ball.png' } },
   { id: 8,  file: 'beat_08.mp4', moment: 'Der Wind weht Louis\' Polizeimütze weg.', training: { type: 'spuren', target: 'muetze' } },
   { id: 11, file: 'beat_11.mp4', moment: 'Blick über den Bauernhof. Eine Prüfung fehlt noch.' },
   { id: 14, file: 'beat_14.mp4', moment: 'Hermès entdeckt den kleinen freundlichen Dieb. Er rennt Richtung See.', training: { type: 'laut', laut: 'DIEB' } },
@@ -85,5 +87,5 @@ export const beatSrc = (file: string) => `${import.meta.env.BASE_URL}assets/beat
 export const lautkarteSrc = (laut: string) => `${import.meta.env.BASE_URL}assets/lautkarten/Lautkarte_${laut}.mp4`
 export const spielsatzSrc = (file: string) => `${import.meta.env.BASE_URL}assets/spielsaetze/${file}`
 // Freigestellte Grafiken (neues Spiel): Konfetti (marke/keks/ball), Puzzle-Bilder
-// (marke_puzzle/face_puzzle), Spürnase-Ziele (muetze/dieb), Fortschrittsturm (hau_den_lukas).
+// (marke_puzzle/face_puzzle), Spürnase-Ziele (muetze/dieb_frei), Fortschrittsturm (hau_tower).
 export const graphicSrc = (name: string) => `${import.meta.env.BASE_URL}assets/graphics/${name}`

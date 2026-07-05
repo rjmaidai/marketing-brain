@@ -106,7 +106,7 @@ export function BildPuzzle({ seed, variant, onDone }: Props) {
   }
 
   return (
-    <div className="stage" onPointerMove={onPointerMove} onPointerUp={onPointerUp}>
+    <div className="stage stage--meter" onPointerMove={onPointerMove} onPointerUp={onPointerUp}>
       <Meter progress={progress} />
       <div className="training fade-in">
         <div className="training-title">{placed ? 'Geschafft!' : 'Zieh das richtige Teil hin'}</div>

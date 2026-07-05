@@ -60,8 +60,15 @@ body {
   background: var(--bg);
   /* Notfalls scrollbar, falls grosse Spielteile mal höher als der Schirm sind. */
   overflow-y: auto;
+  /* In Minispielen steht links der volle „Hau den Lukas"-Turm: Inhalt rechts
+     davon halten, damit nichts verdeckt wird. */
   /* Jede neue Ebene (Start, Training) blendet langsam ein. */
   animation: fadeIn var(--med) var(--ease) both;
+}
+
+/* Minispiel-Bühne mit Fortschrittsturm: Inhalt rechts vom Turm zentrieren. */
+.stage--meter {
+  padding-left: calc(16px + min(22vw, 210px));
 }
 
 /* Weiche, langsame Einblendung — nie hart, nie schnell. */
@@ -381,9 +388,9 @@ body {
 /* --- „Hau den Lukas"-Fortschrittsbalken + Konfetti (v2) --- */
 .meter {
   position: fixed;
-  right: max(4px, env(safe-area-inset-right));
-  bottom: max(2px, env(safe-area-inset-bottom));
-  height: 34vh;
+  left: max(2px, env(safe-area-inset-left));
+  top: max(4px, env(safe-area-inset-top));
+  bottom: max(4px, env(safe-area-inset-bottom));
   z-index: 20;
   pointer-events: none;
   filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.45));
@@ -395,8 +402,8 @@ body {
 }
 .meter-puck {
   position: absolute;
-  left: 47%;
-  width: 13%;
+  left: 50%;
+  width: 30%;
   aspect-ratio: 1;
   transform: translate(-50%, -50%);
   border-radius: 50%;
@@ -431,7 +438,7 @@ body {
 /* Zurück-Knopf für die Minispiele (man kann einen Schritt zurück). */
 .back-btn {
   position: fixed;
-  left: max(14px, env(safe-area-inset-left));
+  right: max(14px, env(safe-area-inset-right));
   bottom: max(16px, env(safe-area-inset-bottom));
   z-index: 24;
   border: none;
@@ -450,6 +457,7 @@ body {
 .puzzle-pic {
   position: relative;
   width: min(92vw, 54vh);
+  max-width: 100%;
   aspect-ratio: 4 / 3;
   border-radius: 20px;
   overflow: hidden;
@@ -499,6 +507,7 @@ body {
 /* Merken — grosse, fast bildfüllende Kacheln des kommenden Story-Bildes (3×2) */
 .mem-grid {
   width: min(98vw, 96vh);
+  max-width: 100%;
   max-height: 74vh;
   aspect-ratio: 4 / 3;
   display: grid;
@@ -529,6 +538,7 @@ body {
 /* Spuren folgen — Zeichenfläche */
 .trace-wrap {
   width: min(98vw, 96vh);
+  max-width: 100%;
   max-height: 80vh;
   aspect-ratio: 4 / 3;
   border-radius: 22px;
