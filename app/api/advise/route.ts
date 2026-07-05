@@ -21,7 +21,7 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
+const MODEL = process.env.ANTHROPIC_MODEL?.trim() || "claude-sonnet-5";
 
 function sse(event: string, data: unknown): string {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
@@ -65,7 +65,7 @@ interface PreviousTurn {
 }
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
   if (!apiKey) {
     return new Response(
       JSON.stringify({
@@ -276,8 +276,10 @@ export async function POST(req: NextRequest) {
         send("done", {});
         controller.close();
       } catch (err: unknown) {
-        const message =
-          err instanceof Error ? err.message : "Unbekannter Fehler.";
+        const e = err as { name?: string; status?: number; message?: string };
+        const message = e?.status
+          ? `${e.name ?? "Fehler"} (${e.status}): ${e.message ?? ""}`.trim()
+          : (e?.message ?? "Unbekannter Fehler.");
         send("error", { message });
         controller.close();
       }

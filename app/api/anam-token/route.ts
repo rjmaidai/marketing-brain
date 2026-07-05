@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
  * available:false — der Client nutzt dann den Fallback-Avatar.
  */
 export async function POST() {
-  const apiKey = process.env.ANAM_API_KEY;
+  const apiKey = process.env.ANAM_API_KEY?.trim();
   if (!apiKey) {
     return NextResponse.json({
       available: false,

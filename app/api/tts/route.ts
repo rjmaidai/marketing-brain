@@ -22,7 +22,7 @@ const DEFAULT_INSTRUCTIONS =
  * die Browser-Stimme zurück.
  */
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) {
     return NextResponse.json({
       available: false,
