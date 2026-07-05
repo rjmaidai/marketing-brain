@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { spielsatzSrc, SPIELSATZ } from '../data/story'
+import { spielsatzSrc, SPIELSATZ, graphicSrc } from '../data/story'
 import { resumeMic } from '../lib/mic'
 import { showFeedback } from '../lib/feedback'
 import { playSample, resumeAudio } from '../lib/audio'
 
-// Spiel „Spuren folgen": Louis' Finger zieht Hermès' Fährte nach.
-// Eine ruhige Linie über den Bildschirm. Kein Timer — die Linie wartet.
-// Sie färbt sich, während der Finger ihr folgt. Am Ende: weiter.
+// Spiel „Spürnase / Spuren folgen" — VERSION 2:
+// Hermès schnüffelt die Fährte nach. Am ENDE der Spur wartet das Ziel —
+// die Mütze (Beat 8) oder der Dieb (Beat 15). Der Finger zieht die Fährte nach,
+// bis er beim Ziel ankommt. Kein Timer — die Linie wartet.
 
 interface Props {
   seed: number
+  target: 'muetze' | 'dieb'
   onDone: () => void
 }
 
@@ -18,7 +20,7 @@ const H = 450
 const N = 60 // Stützpunkte entlang der Fährte
 const REACH = 60 // wie nah der Finger sein muss (grosszügig)
 
-export function SpurenFolgen({ seed, onDone }: Props) {
+export function SpurenFolgen({ seed, target, onDone }: Props) {
   const [reached, setReached] = useState(0)
   const [asked, setAsked] = useState(false) // erst nachziehbar, wenn die Frage gestellt wurde
   const doneRef = useRef(false)
@@ -86,11 +88,15 @@ export function SpurenFolgen({ seed, onDone }: Props) {
 
   const head = pts[Math.min(reached, N - 1)]
   const start = pts[0]
+  const goal = pts[N - 1]
+  const targetImg = graphicSrc(target === 'muetze' ? 'muetze.png' : 'dieb.png')
 
   return (
     <div className="stage">
       <div className="training fade-in">
-        <div className="training-title">Folge der Spur</div>
+        <div className="training-title">
+          {target === 'muetze' ? 'Schnüffle zur Mütze' : 'Folge der Spur zum Dieb'}
+        </div>
         <svg
           className="trace-wrap"
           viewBox={`0 0 ${W} ${H}`}
@@ -101,13 +107,15 @@ export function SpurenFolgen({ seed, onDone }: Props) {
           }}
           onPointerMove={follow}
         >
+          {/* Ziel am Ende der Spur (Mütze bzw. Dieb) */}
+          <image href={targetImg} x={goal.x - 60} y={goal.y - 60} width={120} height={120} preserveAspectRatio="xMidYMid meet" />
           {/* blasse Fährte */}
           <path d={pathD} fill="none" stroke="rgba(244,236,224,0.18)" strokeWidth={16} strokeLinecap="round" strokeLinejoin="round" strokeDasharray="2 22" />
           {/* eingefärbter Teil */}
           <path d={trailD} fill="none" stroke="var(--accent-soft)" strokeWidth={16} strokeLinecap="round" strokeLinejoin="round" />
           {/* Startpunkt (Pfote) */}
           {reached === 0 && <circle cx={start.x} cy={start.y} r={22} fill="var(--accent)" />}
-          {/* aktueller Kopf */}
+          {/* aktueller Kopf (die schnüffelnde Nase) */}
           <circle cx={head.x} cy={head.y} r={20} fill="var(--accent)" />
         </svg>
       </div>

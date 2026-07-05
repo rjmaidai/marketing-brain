@@ -252,11 +252,11 @@ function Training({
     case 'laut':
       return <LautUebung laut={laut} onDone={onLaut} />
     case 'spuren':
-      return <SpurenFolgen seed={beatId} onDone={onGame} />
+      return <SpurenFolgen seed={beatId} target={training.target ?? 'muetze'} onDone={onGame} />
     case 'merken':
       return <Merken seed={beatId} nextBeatSrc={nextBeatSrc} onDone={onGame} />
     case 'puzzle':
-      return <BildPuzzle seed={beatId} nextBeatSrc={nextBeatSrc} onDone={onGame} />
+      return <BildPuzzle seed={beatId} variant={training.variant ?? 'marke'} onDone={onGame} />
   }
 }
 

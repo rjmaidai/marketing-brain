@@ -378,6 +378,56 @@ body {
   transform: scale(1);
 }
 
+/* --- Zieh-Puzzle (v2): Bild mit rundem Loch + zwei Zieh-Teile --- */
+.puzzle-pic {
+  position: relative;
+  width: min(74vw, 360px);
+  aspect-ratio: 4 / 3;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px var(--shadow);
+  background: var(--bg-soft);
+}
+.puzzle-pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.puzzle-hole {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 42%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--bg-soft);
+  box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.28), inset 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+.piece-row {
+  display: flex;
+  gap: 40px;
+  justify-content: center;
+  margin-top: 26px;
+  transition: opacity 300ms ease;
+}
+.drag-piece {
+  width: min(32vw, 150px);
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 50%;
+  padding: 0;
+  cursor: grab;
+  box-shadow: 0 8px 24px var(--shadow), inset 0 0 0 3px rgba(255, 255, 255, 0.25);
+  touch-action: none;
+}
+.drag-piece:active {
+  cursor: grabbing;
+}
+
 /* Merken — grosse, fast bildfüllende Kacheln des kommenden Story-Bildes (3×2) */
 .mem-grid {
   width: min(94vw, 560px);
