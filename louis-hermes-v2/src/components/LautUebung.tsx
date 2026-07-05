@@ -99,6 +99,14 @@ export function LautUebung({ laut, onDone }: Props) {
       }
       v2.play().catch(() => advanceCard())
     })
+    // Fail-safe: manche iPads geben nach mehreren Video-Elementen zwar ein
+    // erfolgreiches play() zurück, zeigen aber ein eingefrorenes Bild — dann
+    // feuern weder timeupdate noch ended, und die Übung bliebe hängen. Nach
+    // einem grosszügigen Fenster trotzdem weiter zur Hör-Phase.
+    const watchdog = window.setTimeout(() => {
+      if (!cardAdvancedRef.current) advanceCard()
+    }, 12000)
+    return () => window.clearTimeout(watchdog)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, attempt])
 

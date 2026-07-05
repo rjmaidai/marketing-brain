@@ -57,8 +57,10 @@ export function Meter({ progress }: { progress: number }) {
   return (
     <>
       <div className="meter" aria-hidden="true">
-        <img className="meter-tower" src={graphicSrc('hau_gauge.png')} alt="" draggable={false} />
-        <div className="meter-arrow" style={{ top: `${arrowTop}%` }} />
+        <div className="meter-inner">
+          <img className="meter-tower" src={graphicSrc('hau_gauge.png')} alt="" draggable={false} />
+          <div className="meter-arrow" style={{ top: `${arrowTop}%` }} />
+        </div>
       </div>
       <div className="confetti-layer" aria-hidden="true">
         {parts.map((part) => (

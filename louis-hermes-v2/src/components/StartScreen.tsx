@@ -62,7 +62,7 @@ export function StartScreen({ hasProgress, onStart }: Props) {
 
         {/* Sichtbarer Build-Stempel: zeigt sofort, ob die neueste Version geladen ist. */}
         <p className="subtle" style={{ fontSize: 11, opacity: 0.4, marginTop: 18 }}>
-          Build 24 · Beat 1–4 gleiche Bauernhof-Musik · Everglow pro Szene · saubere Stimme
+          Build 25 · Musik lauter · Mütze −1s · Hochrenn-Freeze weg · Gauge ganz · Lautkarte-Fail-safe
         </p>
       </div>
     </div>
