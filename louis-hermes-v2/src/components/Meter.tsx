@@ -17,13 +17,8 @@ interface Particle {
   size: number
 }
 
-// Track am Turm (in % der Turmhöhe): unten (Start-Puck) = wenig, oben (100) = geschafft.
-const TRACK_BOTTOM = 80
-const TRACK_TOP = 28
-
 export function Meter({ progress }: { progress: number }) {
   const p = Math.max(0, Math.min(1, progress))
-  const puckTop = TRACK_BOTTOM - (TRACK_BOTTOM - TRACK_TOP) * p
 
   const [parts, setParts] = useState<Particle[]>([])
   const idRef = useRef(0)
@@ -55,8 +50,7 @@ export function Meter({ progress }: { progress: number }) {
   return (
     <>
       <div className="meter" aria-hidden="true">
-        <img className="meter-tower" src={graphicSrc('hau_den_lukas.png')} alt="" draggable={false} />
-        <div className="meter-puck" style={{ top: `${puckTop}%` }} />
+        <img className="meter-tower" src={graphicSrc('hau_gauge.png')} alt="" draggable={false} />
       </div>
       <div className="confetti-layer" aria-hidden="true">
         {parts.map((part) => (

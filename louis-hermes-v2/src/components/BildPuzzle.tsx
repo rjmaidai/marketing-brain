@@ -13,15 +13,22 @@ import { Meter } from './Meter'
 
 interface Props {
   seed: number
-  variant: 'marke' | 'face'
+  variant: 'marke' | 'face' | 'ball'
   onDone: () => void
 }
 
 const MAX_ATTEMPTS = 3
 
+const PICTURE: Record<Props['variant'], string> = {
+  marke: 'marke_puzzle.png',
+  face: 'face_puzzle.png',
+  ball: 'ball_puzzle.png',
+}
+
 export function BildPuzzle({ seed, variant, onDone }: Props) {
-  const picture = graphicSrc(variant === 'marke' ? 'marke_puzzle.png' : 'face_puzzle.png')
-  const wrongPiece = graphicSrc('ball.png')
+  const picture = graphicSrc(PICTURE[variant])
+  // Das offensichtlich FALSCHE Teil: beim Ball-Puzzle der Hund, sonst der Ball.
+  const wrongPiece = graphicSrc(variant === 'ball' ? 'face_puzzle.png' : 'ball.png')
 
   const [asked, setAsked] = useState(false)
   const [placed, setPlaced] = useState(false)
@@ -106,7 +113,7 @@ export function BildPuzzle({ seed, variant, onDone }: Props) {
   }
 
   return (
-    <div className="stage" onPointerMove={onPointerMove} onPointerUp={onPointerUp}>
+    <div className="stage stage--meter" onPointerMove={onPointerMove} onPointerUp={onPointerUp}>
       <Meter progress={progress} />
       <div className="training fade-in">
         <div className="training-title">{placed ? 'Geschafft!' : 'Zieh das richtige Teil hin'}</div>

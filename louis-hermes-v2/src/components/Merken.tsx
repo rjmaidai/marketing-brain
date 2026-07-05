@@ -15,6 +15,8 @@ import { Meter } from './Meter'
 interface Props {
   seed: number
   nextBeatSrc?: string
+  /** Festes Bild für die Kacheln (z. B. der Ball). Hat Vorrang vor dem Poster. */
+  imageSrc?: string
   onDone: () => void
 }
 
@@ -42,7 +44,7 @@ function tilePos(i: number) {
   return `${col * 50}% ${row * 100}%`
 }
 
-export function Merken({ seed, nextBeatSrc, onDone }: Props) {
+export function Merken({ seed, nextBeatSrc, imageSrc, onDone }: Props) {
   const sequence = useRef(makeSequence(seed, 3)).current
   const [img, setImg] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
@@ -57,6 +59,12 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
 
   useEffect(() => {
     let alive = true
+    // Festes Bild (z. B. Ball) hat Vorrang — kein Poster nötig.
+    if (imageSrc) {
+      setImg(imageSrc)
+      setReady(true)
+      return
+    }
     if (!nextBeatSrc) {
       setReady(true)
       return
@@ -69,16 +77,17 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
     return () => {
       alive = false
     }
-  }, [nextBeatSrc])
+  }, [nextBeatSrc, imageSrc])
 
   const clearTimers = () => {
     timers.current.forEach((t) => window.clearTimeout(t))
     timers.current = []
   }
 
-  const showSequence = useCallback(() => {
+  // keep = Fortschritt behalten (nur die Abfolge nochmal zeigen, ohne von vorn zu starten).
+  const showSequence = useCallback((keep = false) => {
     setShowing(true)
-    setInputIdx(0)
+    if (!keep) setInputIdx(0)
     clearTimers()
     sequence.forEach((tile, i) => {
       timers.current.push(
@@ -105,6 +114,13 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
     })
   }, [showSequence])
 
+  // Zurück-Knopf / Reminder: Abfolge nochmal zeigen, aber den Fortschritt behalten
+  // (nach einem falschen Tipp kann man dieselbe Kachel nochmals versuchen).
+  const replaySequence = useCallback(() => {
+    if (doneRef.current) return
+    showSequence(true)
+  }, [showSequence])
+
   useEffect(() => {
     if (!ready) return
     resumeMic()
@@ -127,13 +143,14 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
         showFeedback('richtig').then(onDone)
       }
     } else {
-      // Falsch -> Balken steigt NICHT. Versuch zählt.
+      // Falsch -> Balken steigt NICHT, aber der Fortschritt bleibt: nach der
+      // Rückmeldung kann DIESELBE Kachel nochmals versucht werden (kein Neustart).
       attemptRef.current += 1
       if (attemptRef.current >= MAX_ATTEMPTS) {
         doneRef.current = true
         showFeedback('falsch').then(onDone)
       } else {
-        showFeedback('falsch').then(presentTask)
+        void showFeedback('falsch') // inputIdx bleibt -> gleiche Stelle nochmal
       }
     }
   }
@@ -150,7 +167,7 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
   }
 
   return (
-    <div className="stage">
+    <div className="stage stage--meter">
       <Meter progress={inputIdx / sequence.length} />
       <div className="training fade-in">
         <div className="training-title">
@@ -176,9 +193,9 @@ export function Merken({ seed, nextBeatSrc, onDone }: Props) {
           ))}
         </div>
       </div>
-      {!showing && inputIdx > 0 && !doneRef.current && (
-        <button className="back-btn" onClick={presentTask}>
-          ↩ Zurück
+      {!showing && !doneRef.current && (
+        <button className="back-btn" onClick={replaySequence}>
+          ↩ Reihenfolge nochmal zeigen
         </button>
       )}
     </div>
