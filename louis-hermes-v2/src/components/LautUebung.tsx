@@ -220,7 +220,7 @@ export function LautUebung({ laut, onDone }: Props) {
           : ''
 
   return (
-    <div className="stage">
+    <div className="stage stage--laut">
       <div className="training fade-in">
         <div className="training-title">{title}</div>
 
