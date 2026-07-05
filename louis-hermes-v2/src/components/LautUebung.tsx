@@ -229,10 +229,22 @@ export function LautUebung({ laut, onDone }: Props) {
 
   return (
     <div className="stage stage--laut">
-      <div className="training fade-in">
+      {/* Das Kartenbild bildfüllend, stark weichgezeichnet + abgedunkelt als
+          Hintergrund — so füllt das Blau der Karte den Schirm und die scharfe
+          Karte poppt davor hervor. */}
+      <video
+        className="laut-backdrop"
+        src={lautkarteSrc(laut)}
+        muted
+        autoPlay
+        loop
+        playsInline
+        aria-hidden="true"
+      />
+      <div className="training laut-content fade-in">
         <div className="training-title">{title}</div>
 
-        {/* Karte in moderater Grösse auf einem warmen Hintergrund (kein Vollbild). */}
+        {/* Scharfe Karte in moderater Grösse, mittig vor dem weichen Hintergrund. */}
         <div className="media-frame laut-card">
           <video
             ref={cardRef}

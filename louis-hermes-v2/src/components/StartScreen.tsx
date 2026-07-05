@@ -62,7 +62,7 @@ export function StartScreen({ hasProgress, onStart }: Props) {
 
         {/* Sichtbarer Build-Stempel: zeigt sofort, ob die neueste Version geladen ist. */}
         <p className="subtle" style={{ fontSize: 11, opacity: 0.4, marginTop: 18 }}>
-          Build 16 · Laut gerahmt+BG · ppp-Fix · Meter grösser · Spürnase strenger · Ball nur Kachel
+          Build 17 · Lautkarte: blauer Weichzeichner-Hintergrund · (Musik folgt nach Abnahme)
         </p>
       </div>
     </div>

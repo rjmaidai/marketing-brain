@@ -103,20 +103,36 @@ body {
   display: block;
 }
 
-/* Laut-Übung: warmer, einladender HINTERGRUND, und die Lautkarte in moderater
-   Grösse (gerahmt) MITTIG darüber — bewusst KEIN Vollbild. */
+/* Laut-Übung: das Kartenbild bildfüllend + weichgezeichnet als Hintergrund,
+   die scharfe Karte poppt mittig davor hervor. */
 .stage--laut {
-  background:
-    radial-gradient(circle at 50% 38%, #4a3a2a 0%, #2a2018 55%, var(--bg) 100%);
+  background: #0e1b30; /* tiefes Blau als Fallback, bis das Video lädt */
+  overflow: hidden;
+}
+.laut-backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.2); /* weiche Ränder ausserhalb des Bildes verstecken */
+  filter: blur(48px) brightness(0.55) saturate(1.3);
+  z-index: 0;
+  pointer-events: none;
+}
+.laut-content {
+  position: relative;
+  z-index: 2; /* Inhalt liegt VOR dem weichen Hintergrund */
 }
 .laut-card {
   aspect-ratio: 16 / 9;
-  width: min(94vw, calc(64vh * 16 / 9));
-  max-width: 94vw;
-  max-height: 64vh;
+  width: min(92vw, calc(62vh * 16 / 9));
+  max-width: 92vw;
+  max-height: 62vh;
   background: #0b0b0f;
-  border: 3px solid rgba(255, 214, 150, 0.5);
-  box-shadow: 0 20px 60px var(--shadow), 0 0 0 1px rgba(0, 0, 0, 0.4);
+  border: 3px solid rgba(255, 255, 255, 0.55);
+  /* kräftiger Schatten + Glow, damit die Karte klar vom Hintergrund abhebt */
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(0, 0, 0, 0.5);
 }
 .laut-card video {
   object-fit: cover;
