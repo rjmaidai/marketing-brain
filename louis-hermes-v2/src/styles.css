@@ -435,7 +435,7 @@ body {
    Ganze Grafik sichtbar (height < verfügbarer Höhe -> nichts abgeschnitten). */
 .meter-inner {
   position: relative;
-  height: 82%;
+  height: 62%;
   aspect-ratio: 240 / 718;
 }
 .meter-tower {

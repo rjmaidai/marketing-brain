@@ -62,7 +62,7 @@ export function StartScreen({ hasProgress, onStart }: Props) {
 
         {/* Sichtbarer Build-Stempel: zeigt sofort, ob die neueste Version geladen ist. */}
         <p className="subtle" style={{ fontSize: 11, opacity: 0.4, marginTop: 18 }}>
-          Build 25 · Musik lauter · Mütze −1s · Hochrenn-Freeze weg · Gauge ganz · Lautkarte-Fail-safe
+          Build 26 · Mütze −2s + Musik bis zum Ende · „Louis" klar · Hau-den-Lukas kleiner
         </p>
       </div>
     </div>
